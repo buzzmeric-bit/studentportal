@@ -89,6 +89,11 @@ class AppTheme {
         headingRowColor: WidgetStateProperty.all(AppColors.background),
         dataRowColor: WidgetStateProperty.all(Colors.white),
       ),
+      scrollbarTheme: const ScrollbarThemeData(
+        thumbVisibility: WidgetStatePropertyAll(false),
+        trackVisibility: WidgetStatePropertyAll(false),
+        thickness: WidgetStatePropertyAll(0),
+      ),
     );
   }
 }

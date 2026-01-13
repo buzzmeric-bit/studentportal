@@ -401,68 +401,138 @@ class HomeScreen extends ConsumerWidget {
     WidgetRef ref,
   ) {
     return Drawer(
-      child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFB794F6), Color(0xFF9B87F5)],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              const Icon(Icons.school_rounded, color: Colors.white, size: 48),
-              const SizedBox(height: 12),
-              Text(
-                l10n.appName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+      backgroundColor: Colors.transparent,
+      child: ClipRRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.85),
+              border: Border(
+                right: BorderSide(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
                 ),
               ),
-              const SizedBox(height: 32),
-              _DrawerItem(
-                icon: Icons.settings_rounded,
-                label: l10n.settings,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/settings');
-                },
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  // App Logo
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF6366F1).withOpacity(0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: Image.asset(
+                        'assets/pythaonelogo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.school_rounded,
+                          color: Color(0xFF6366F1),
+                          size: 36,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'PythaOne',
+                    style: TextStyle(
+                      color: Color(0xFF1F2937),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _DrawerItem(
+                    icon: Icons.settings_rounded,
+                    label: l10n.settings,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/settings');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.contact_support_rounded,
+                    label: l10n.contactUs,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/contact');
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.info_rounded,
+                    label: l10n.about,
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/about');
+                    },
+                  ),
+                  const Spacer(),
+                  // White Logout Button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: GestureDetector(
+                      onTap: () async {
+                        Navigator.pop(context);
+                        await ref.read(authProvider.notifier).signOut();
+                        if (context.mounted) {
+                          context.go('/login');
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.logout_rounded,
+                              color: Colors.grey[700],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.logout,
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
-              _DrawerItem(
-                icon: Icons.contact_support_rounded,
-                label: l10n.contactUs,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/contact');
-                },
-              ),
-              _DrawerItem(
-                icon: Icons.info_rounded,
-                label: l10n.about,
-                onTap: () {
-                  Navigator.pop(context);
-                  context.push('/about');
-                },
-              ),
-              const Spacer(),
-              _DrawerItem(
-                icon: Icons.logout_rounded,
-                label: l10n.logout,
-                onTap: () async {
-                  Navigator.pop(context);
-                  await ref.read(authProvider.notifier).signOut();
-                  if (context.mounted) {
-                    context.go('/login');
-                  }
-                },
-                isDestructive: true,
-              ),
-              const SizedBox(height: 20),
-            ],
+            ),
           ),
         ),
       ),
@@ -474,27 +544,34 @@ class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool isDestructive;
 
   const _DrawerItem({
     required this.icon,
     required this.label,
     required this.onTap,
-    this.isDestructive = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isDestructive ? const Color(0xFFF43F5E) : Colors.white,
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: const Color(0xFF6366F1).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(
+          icon,
+          color: const Color(0xFF6366F1),
+          size: 20,
+        ),
       ),
       title: Text(
         label,
-        style: TextStyle(
-          color: isDestructive ? const Color(0xFFF43F5E) : Colors.white,
-          fontWeight: FontWeight.w500,
+        style: const TextStyle(
+          color: Color(0xFF374151),
+          fontWeight: FontWeight.w600,
+          fontSize: 15,
         ),
       ),
       onTap: onTap,

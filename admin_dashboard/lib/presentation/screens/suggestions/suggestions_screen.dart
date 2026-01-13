@@ -943,197 +943,399 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
   }
 
   void _showDetailDialog(BuildContext context, Suggestion s) {
+    // Get type color for theming
+    Color getTypeColor(String type) {
+      switch (type) {
+        case 'reclamation_note': return const Color(0xFFEF4444);
+        case 'absence': return const Color(0xFFF59E0B);
+        case 'emploi_temps': return const Color(0xFF3B82F6);
+        case 'inscription': return const Color(0xFF8B5CF6);
+        case 'paiement': return const Color(0xFF10B981);
+        case 'orientation': return const Color(0xFFEC4899);
+        case 'bourse': return const Color(0xFF14B8A6);
+        case 'transport': return const Color(0xFF78716C);
+        case 'restauration': return const Color(0xFFEAB308);
+        case 'bibliotheque': return const Color(0xFF0EA5E9);
+        case 'vie_universitaire': return const Color(0xFFA855F7);
+        case 'infrastructure': return const Color(0xFF64748B);
+        case 'securite': return const Color(0xFFDC2626);
+        default: return const Color(0xFF6B7280);
+      }
+    }
+    
+    final typeColor = getTypeColor(s.suggestionType);
+    
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
         child: Container(
-          width: 700,
+          width: 600,
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: typeColor.withOpacity(0.15),
+                blurRadius: 30,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
+              // Modern Header with gradient accent
               Container(
-                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      typeColor.withOpacity(0.05),
+                      Colors.white,
+                    ],
+                  ),
                   borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
+                    top: Radius.circular(24),
                   ),
                 ),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Top bar with close button
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 16, 0),
+                      child: Row(
                         children: [
-                          Text(
-                            s.subject,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              _TypeBadge(type: s.suggestionType),
-                              const SizedBox(width: 8),
-                              _StatusChip(status: s.status),
-                              const Spacer(),
-                              Text(
-                                DateFormat(
-                                  'dd/MM/yyyy à HH:mm',
-                                ).format(s.createdAt),
-                                style: TextStyle(color: Colors.grey[600]),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(ctx),
-                    ),
-                  ],
-                ),
-              ),
-              // Content
-              Flexible(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Student info
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: 24,
-                              backgroundColor: Colors.blue.shade100,
-                              child: Text(
-                                s.studentName?.substring(0, 1).toUpperCase() ??
-                                    'A',
-                                style: TextStyle(
-                                  color: Colors.blue.shade700,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                          // Type indicator dot
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: typeColor,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: typeColor.withOpacity(0.4),
+                                  blurRadius: 6,
                                 ),
-                              ),
+                              ],
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                          const SizedBox(width: 12),
+                          _TypeBadge(type: s.suggestionType),
+                          const SizedBox(width: 8),
+                          _StatusChip(status: s.status),
+                          const Spacer(),
+                          // Unread indicator
+                          if (!s.isRead)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    s.studentName ?? 'Étudiant',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      if (s.studentCode != null &&
-                                          s.studentCode!.isNotEmpty) ...[
-                                        Icon(
-                                          Icons.badge,
-                                          size: 16,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          s.studentCode!,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 16),
-                                      ],
-                                      if (s.className != null &&
-                                          s.className!.isNotEmpty) ...[
-                                        Icon(
-                                          Icons.school,
-                                          size: 16,
-                                          color: Colors.grey.shade600,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          s.className!,
-                                          style: TextStyle(
-                                            color: Colors.grey.shade700,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Nouveau',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.blue.shade700,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            TextButton.icon(
-                              icon: const Icon(Icons.person, size: 16),
-                              label: const Text('Voir profil'),
-                              onPressed: () {
-                                Navigator.pop(ctx);
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UserDetailScreen(
-                                      userId: s.studentId,
-                                      userName: s.studentName,
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: Icon(Icons.close, color: Colors.grey[400]),
+                            onPressed: () => Navigator.pop(ctx),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.grey[100],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Subject title
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              s.subject,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: -0.5,
+                                height: 1.2,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            DateFormat('dd MMM yyyy • HH:mm', 'fr_FR').format(s.createdAt),
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Divider
+              Container(height: 1, color: Colors.grey[100]),
+              
+              // Content
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Student info card - modern design
+                      InkWell(
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => UserDetailScreen(
+                                userId: s.studentId,
+                                userName: s.studentName,
+                              ),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                typeColor.withOpacity(0.08),
+                                typeColor.withOpacity(0.03),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: typeColor.withOpacity(0.15),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              // Avatar with gradient
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      typeColor.withOpacity(0.8),
+                                      typeColor,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: typeColor.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    s.studentName?.substring(0, 1).toUpperCase() ?? 'A',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 20,
                                     ),
                                   ),
-                                );
-                              },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      s.studentName ?? 'Étudiant',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        if (s.studentCode != null && s.studentCode!.isNotEmpty) ...[
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(6),
+                                              border: Border.all(color: Colors.grey[200]!),
+                                            ),
+                                            child: Text(
+                                              s.studentCode!,
+                                              style: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 10),
+                                        ],
+                                        if (s.className != null && s.className!.isNotEmpty) ...[
+                                          Icon(Icons.school_outlined, size: 14, color: Colors.grey[500]),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            s.className!,
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.person_outline, size: 16, color: typeColor),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Profil',
+                                      style: TextStyle(
+                                        color: typeColor,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Icon(Icons.arrow_forward_ios, size: 12, color: typeColor),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Message content - clean design
+                      Row(
+                        children: [
+                          Icon(Icons.message_outlined, size: 16, color: Colors.grey[400]),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Message',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                              letterSpacing: 0.5,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 20),
-                      // Message content
-                      const Text(
-                        'Message:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade200),
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey[100]!),
                         ),
                         child: SelectableText(
                           s.content.isNotEmpty ? s.content : '(Aucun contenu)',
-                          style: const TextStyle(fontSize: 15, height: 1.5),
+                          style: TextStyle(
+                            fontSize: 15,
+                            height: 1.6,
+                            color: Colors.grey[800],
+                          ),
                         ),
                       ),
-                      // Attachments with image preview
+                      
+                      // Attachments with modern design
                       if (s.attachments.isNotEmpty) ...[
-                        const SizedBox(height: 20),
-                        Text(
-                          'Pièces jointes (${s.attachments.length}):',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Icon(Icons.attach_file, size: 16, color: Colors.grey[400]),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Pièces jointes',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                                color: Colors.grey[600],
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: typeColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${s.attachments.length}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: typeColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         _AttachmentsGrid(attachments: s.attachments),
@@ -1142,55 +1344,83 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                   ),
                 ),
               ),
-              // Actions
+              
+              // Modern Actions Footer
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
+                  color: Colors.grey[50],
                   borderRadius: const BorderRadius.vertical(
-                    bottom: Radius.circular(16),
+                    bottom: Radius.circular(24),
+                  ),
+                  border: Border(
+                    top: BorderSide(color: Colors.grey[100]!),
                   ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    // Delete button - subtle
                     TextButton.icon(
-                      icon: Icon(
-                        Icons.delete_outline,
-                        color: Colors.red.shade400,
-                      ),
+                      icon: Icon(Icons.delete_outline, size: 18, color: Colors.red[400]),
                       label: Text(
                         'Supprimer',
-                        style: TextStyle(color: Colors.red.shade400),
+                        style: TextStyle(color: Colors.red[400]),
                       ),
                       onPressed: () {
                         Navigator.pop(ctx);
                         _confirmDelete(s);
                       },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const Spacer(),
+                    // Mark as read/unread
                     if (!s.isRead)
-                      TextButton.icon(
-                        icon: const Icon(Icons.mark_email_read),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.mark_email_read, size: 18),
                         label: const Text('Marquer lu'),
                         onPressed: () {
-                          ref
-                              .read(suggestionsProvider.notifier)
-                              .markAsRead(s.id);
+                          ref.read(suggestionsProvider.notifier).markAsRead(s.id);
                           Navigator.pop(ctx);
                         },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          side: BorderSide(color: Colors.grey[300]!),
+                          foregroundColor: Colors.grey[700],
+                        ),
+                      )
+                    else
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.mark_email_unread, size: 18),
+                        label: const Text('Non lu'),
+                        onPressed: () {
+                          ref.read(suggestionsProvider.notifier).markAsUnread(s.id);
+                          Navigator.pop(ctx);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          side: BorderSide(color: Colors.grey[300]!),
+                          foregroundColor: Colors.grey[700],
+                        ),
                       ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
+                    // Reply button - prominent
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.reply),
+                      icon: const Icon(Icons.reply, size: 18),
                       label: const Text('Répondre'),
                       onPressed: () {
                         Navigator.pop(ctx);
                         _showReplyDialog(context, ref, s);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: typeColor,
                         foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ],
@@ -1221,253 +1451,349 @@ class _SuggestionCard extends StatelessWidget {
     required this.onAction,
   });
 
+  /// Get color for suggestion type
+  Color _getTypeColor(String type) {
+    switch (type) {
+      case 'reclamation_note':
+        return const Color(0xFFEF4444);
+      case 'absence':
+        return const Color(0xFFF59E0B);
+      case 'emploi_temps':
+        return const Color(0xFF3B82F6);
+      case 'inscription':
+        return const Color(0xFF8B5CF6);
+      case 'paiement':
+        return const Color(0xFF10B981);
+      case 'orientation':
+        return const Color(0xFFEC4899);
+      case 'bourse':
+        return const Color(0xFF14B8A6);
+      case 'transport':
+        return const Color(0xFF78716C);
+      case 'restauration':
+        return const Color(0xFFEAB308);
+      case 'bibliotheque':
+        return const Color(0xFF0EA5E9);
+      case 'vie_universitaire':
+        return const Color(0xFFA855F7);
+      case 'infrastructure':
+        return const Color(0xFF64748B);
+      case 'securite':
+        return const Color(0xFFDC2626);
+      case 'autre':
+        return const Color(0xFF6B7280);
+      default:
+        return const Color(0xFF9CA3AF);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = suggestion;
+    final typeColor = _getTypeColor(s.suggestionType);
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: isSelected
-          ? Colors.blue.shade100
-          : (s.isRead ? null : Colors.blue.shade50),
+      elevation: isSelected ? 4 : 2,
+      shadowColor: isSelected ? Colors.blue.withOpacity(0.3) : Colors.black12,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: isSelected
             ? BorderSide(color: Colors.blue.shade400, width: 2)
-            : BorderSide.none,
+            : s.isRead 
+                ? BorderSide.none
+                : BorderSide(color: typeColor.withOpacity(0.3), width: 1),
       ),
       child: InkWell(
         onTap: selectionMode ? onSelect : () => onAction('view'),
         onLongPress: onSelect,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header row with checkbox, unread indicator, subject, type and status
-              Row(
-                children: [
-                  if (selectionMode) ...[
-                    Checkbox(
-                      value: isSelected,
-                      onChanged: (_) => onSelect(),
-                      activeColor: Colors.blue,
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  if (!s.isRead && !selectionMode)
-                    Container(
-                      width: 10,
-                      height: 10,
-                      margin: const EdgeInsets.only(right: 8),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  Expanded(
-                    child: _highlightText(
-                      s.subject,
-                      searchQuery,
-                      const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  _TypeBadge(type: s.suggestionType),
-                  const SizedBox(width: 8),
-                  _StatusChip(status: s.status),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Student info card - clickable to navigate to user details
-              InkWell(
+              // Left: User Avatar (like announcement type icon)
+              GestureDetector(
                 onTap: selectionMode ? null : () => onAction('viewStudent'),
-                borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade200),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        typeColor.withOpacity(0.8),
+                        typeColor,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: typeColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Row(
+                  child: Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 20,
-                        backgroundColor: Colors.blue.shade100,
+                      Center(
                         child: Text(
                           s.studentName?.substring(0, 1).toUpperCase() ?? 'A',
-                          style: TextStyle(
-                            color: Colors.blue.shade700,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.bold,
+                            fontSize: 22,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _highlightText(
-                                    s.studentName ?? 'Étudiant',
-                                    searchQuery,
-                                    const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                ),
-                                if (!selectionMode) ...[
-                                  const SizedBox(width: 8),
-                                  Icon(
-                                    Icons.open_in_new,
-                                    size: 14,
-                                    color: Colors.blue.shade400,
-                                  ),
-                                ],
-                              ],
+                      // Unread indicator
+                      if (!s.isRead)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
-                            const SizedBox(height: 2),
-                            Row(
-                              children: [
-                                if (s.studentCode != null &&
-                                    s.studentCode!.isNotEmpty) ...[
-                                  Icon(
-                                    Icons.badge,
-                                    size: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  _highlightText(
-                                    s.studentCode!,
-                                    searchQuery,
-                                    TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 12,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                  const SizedBox(width: 12),
-                                ],
-                                if (s.className != null &&
-                                    s.className!.isNotEmpty) ...[
-                                  Icon(
-                                    Icons.school,
-                                    size: 14,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  _highlightText(
-                                    s.className!,
-                                    searchQuery,
-                                    TextStyle(
-                                      color: Colors.grey.shade700,
-                                      fontSize: 12,
-                                    ),
-                                    maxLines: 1,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                      // Timestamp
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            DateFormat('dd/MM/yyyy').format(s.createdAt),
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            DateFormat('HH:mm').format(s.createdAt),
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              // Message preview with highlighting
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: _highlightText(
-                  s.content.isNotEmpty ? s.content : '(Aucun contenu)',
-                  searchQuery,
-                  TextStyle(color: Colors.grey.shade800),
-                  maxLines: 3,
+              const SizedBox(width: 14),
+              
+              // Middle: Content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header: Subject + Selection checkbox
+                    Row(
+                      children: [
+                        if (selectionMode) ...[
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: isSelected,
+                              onChanged: (_) => onSelect(),
+                              activeColor: Colors.blue,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Expanded(
+                          child: _highlightText(
+                            s.subject,
+                            searchQuery,
+                            TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              color: s.isRead ? Colors.grey[800] : Colors.black,
+                            ),
+                            maxLines: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    
+                    // Student info row
+                    GestureDetector(
+                      onTap: selectionMode ? null : () => onAction('viewStudent'),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: _highlightText(
+                              s.studentName ?? 'Étudiant',
+                              searchQuery,
+                              TextStyle(
+                                fontSize: 13,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                            ),
+                          ),
+                          if (s.studentCode != null && s.studentCode!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                s.studentCode!,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (s.className != null && s.className!.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Icon(Icons.school_outlined, size: 12, color: Colors.grey[500]),
+                            const SizedBox(width: 3),
+                            Text(
+                              s.className!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                          if (!selectionMode) ...[
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.open_in_new,
+                              size: 12,
+                              color: Colors.blue.shade300,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Content preview
+                    _highlightText(
+                      s.content.isNotEmpty ? s.content : '(Aucun contenu)',
+                      searchQuery,
+                      TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                      maxLines: 2,
+                    ),
+                    const SizedBox(height: 10),
+                    
+                    // Bottom row: Type badge, status, attachments indicator, date
+                    Row(
+                      children: [
+                        _TypeBadge(type: s.suggestionType),
+                        const SizedBox(width: 8),
+                        _StatusChip(status: s.status),
+                        if (s.hasAttachment || s.attachments.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.amber.shade200),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.attach_file,
+                                  size: 12,
+                                  color: Colors.amber.shade700,
+                                ),
+                                const SizedBox(width: 2),
+                                Text(
+                                  '${s.attachments.length}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.amber.shade700,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const Spacer(),
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('dd/MM/yy HH:mm').format(s.createdAt),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              // Attachments preview (show thumbnails for images)
-              if (s.attachments.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                _AttachmentsPreview(attachments: s.attachments),
-              ],
-              const SizedBox(height: 12),
-              // Footer row with action buttons
-              Row(
-                children: [
-                  const Spacer(),
-                  // Delete button
-                  TextButton.icon(
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 16,
-                      color: Colors.red.shade400,
+              
+              // Right: Action menu
+              if (!selectionMode)
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: Colors.grey[400]),
+                  onSelected: onAction,
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'reply',
+                      child: Row(
+                        children: [
+                          Icon(Icons.reply, size: 18, color: Colors.blue),
+                          const SizedBox(width: 8),
+                          const Text('Répondre'),
+                        ],
+                      ),
                     ),
-                    label: Text(
-                      'Supprimer',
-                      style: TextStyle(color: Colors.red.shade400),
+                    PopupMenuItem(
+                      value: s.isRead ? 'unread' : 'read',
+                      child: Row(
+                        children: [
+                          Icon(
+                            s.isRead ? Icons.mark_email_unread : Icons.mark_email_read,
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(s.isRead ? 'Marquer non lu' : 'Marquer lu'),
+                        ],
+                      ),
                     ),
-                    onPressed: () => onAction('delete'),
-                  ),
-                  const SizedBox(width: 8),
-                  if (!s.isRead)
-                    TextButton.icon(
-                      icon: const Icon(Icons.mark_email_read, size: 16),
-                      label: const Text('Marquer lu'),
-                      onPressed: () => onAction('read'),
-                    )
-                  else
-                    TextButton.icon(
-                      icon: const Icon(Icons.mark_email_unread, size: 16),
-                      label: const Text('Non lu'),
-                      onPressed: () => onAction('unread'),
+                    PopupMenuItem(
+                      value: 'viewStudent',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.person_outline, size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Voir étudiant'),
+                        ],
+                      ),
                     ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: const Icon(Icons.reply, size: 16),
-                    label: const Text('Répondre'),
-                    onPressed: () => onAction('reply'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                          const SizedBox(width: 8),
+                          const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ],
           ),
         ),

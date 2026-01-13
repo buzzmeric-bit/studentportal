@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/admin_sidebar.dart';
 import '../../providers/auth_provider.dart';
 
@@ -80,6 +81,14 @@ class SettingsScreen extends ConsumerWidget {
                             subtitle: const Text('Nom, adresse, logo...'),
                             trailing: const Icon(Icons.chevron_right),
                             onTap: () {},
+                          ),
+                          const Divider(),
+                          ListTile(
+                            leading: const Icon(Icons.contact_phone, color: Color(0xFF3B82F6)),
+                            title: const Text('Informations de contact'),
+                            subtitle: const Text('Téléphone, email, réseaux sociaux...'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => context.push('/settings/contact-info'),
                           ),
                           const Divider(),
                           ListTile(

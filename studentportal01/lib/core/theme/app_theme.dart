@@ -142,6 +142,11 @@ class AppTheme {
       textButtonTheme: _textButtonTheme,
       inputDecorationTheme: _inputDecorationTheme,
       bottomNavigationBarTheme: _bottomNavigationBarTheme,
+      scrollbarTheme: const ScrollbarThemeData(
+        thumbVisibility: WidgetStatePropertyAll(false),
+        trackVisibility: WidgetStatePropertyAll(false),
+        thickness: WidgetStatePropertyAll(0),
+      ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
         thickness: 1,
@@ -173,6 +178,11 @@ class AppTheme {
       textButtonTheme: _textButtonTheme,
       inputDecorationTheme: _darkInputDecorationTheme,
       bottomNavigationBarTheme: _darkBottomNavigationBarTheme,
+      scrollbarTheme: const ScrollbarThemeData(
+        thumbVisibility: WidgetStatePropertyAll(false),
+        trackVisibility: WidgetStatePropertyAll(false),
+        thickness: WidgetStatePropertyAll(0),
+      ),
       dividerTheme: DividerThemeData(
         color: Colors.white.withValues(alpha: 0.12),
         thickness: 1,

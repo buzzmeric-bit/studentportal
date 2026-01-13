@@ -205,99 +205,124 @@ class _WriteSuggestionScreenState extends ConsumerState<WriteSuggestionScreen> {
     }
   }
 
-  /// Build modern glassy type selector with radio buttons
+  /// Build premium dropdown type selector
   Widget _buildTypeSelector() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.5),
-              width: 1,
-            ),
+    final selectedColor = getTypeColor(_selectedType);
+    final selectedIcon = getTypeIcon(_selectedType);
+    final selectedLabel = suggestionTypes[_selectedType] ?? 'Sélectionner';
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: suggestionTypes.entries.map((entry) {
-              final isSelected = _selectedType == entry.key;
-              final typeColor = getTypeColor(entry.key);
-              final typeIcon = getTypeIcon(entry.key);
-              
-              return GestureDetector(
-                onTap: () => setState(() => _selectedType = entry.key),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: isSelected 
-                        ? typeColor.withOpacity(0.15) 
-                        : Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? typeColor : Colors.grey.withOpacity(0.2),
-                      width: isSelected ? 2 : 1,
+        ],
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          popupMenuTheme: PopupMenuThemeData(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            elevation: 8,
+          ),
+        ),
+        child: PopupMenuButton<String>(
+          onSelected: (value) => setState(() => _selectedType = value),
+          offset: const Offset(0, 56),
+          itemBuilder: (context) => suggestionTypes.entries.map((entry) {
+            final typeColor = getTypeColor(entry.key);
+            final typeIcon = getTypeIcon(entry.key);
+            final isSelected = _selectedType == entry.key;
+            
+            return PopupMenuItem<String>(
+              value: entry.key,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: typeColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(typeIcon, color: typeColor, size: 18),
                     ),
-                    boxShadow: isSelected ? [
-                      BoxShadow(
-                        color: typeColor.withOpacity(0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ] : null,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Radio indicator
-                      Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isSelected ? typeColor : Colors.grey[400]!,
-                            width: 2,
-                          ),
-                        ),
-                        child: isSelected
-                            ? Center(
-                                child: Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: typeColor,
-                                  ),
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        typeIcon,
-                        size: 18,
-                        color: isSelected ? typeColor : Colors.grey[600],
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
                         entry.value,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          color: isSelected ? typeColor : Colors.grey[700],
+                          color: isSelected ? typeColor : Colors.grey[800],
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(Icons.check_circle, color: typeColor, size: 20),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: selectedColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(selectedIcon, color: selectedColor, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Type de suggestion',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        selectedLabel,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: selectedColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            }).toList(),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Colors.grey[600],
+                    size: 20,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -14,6 +14,7 @@ import '../../presentation/screens/suggestions/suggestions_screen.dart';
 import '../../presentation/screens/payments/payments_screen.dart';
 import '../../presentation/screens/documents/documents_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
+import '../../presentation/screens/settings/contact_info_screen.dart';
 
 final router = GoRouter(
   initialLocation: '/login',
@@ -34,5 +35,6 @@ final router = GoRouter(
     GoRoute(path: '/payments', builder: (_, _) => const PaymentsScreen()),
     GoRoute(path: '/documents', builder: (_, _) => const DocumentsScreen()),
     GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+    GoRoute(path: '/settings/contact-info', builder: (_, _) => const ContactInfoScreen()),
   ],
 );

@@ -52,7 +52,7 @@ class StudentPortalApp extends ConsumerWidget {
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
       child: MaterialApp.router(
-        title: 'Student Portal',
+        title: 'PythaOne',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,

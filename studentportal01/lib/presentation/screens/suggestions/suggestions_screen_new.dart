@@ -162,14 +162,14 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen>
                                   Icon(
                                     Icons.lightbulb_outline,
                                     size: 64,
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Colors.black.withOpacity(0.3),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     'Aucune suggestion',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.black.withOpacity(0.6),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -183,7 +183,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen>
                                 'Aucun résultat',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.black.withOpacity(0.6),
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),

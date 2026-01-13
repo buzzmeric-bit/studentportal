@@ -1,159 +1,283 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/app_localizations.dart';
 
+// Provider to fetch contact info from Supabase
+final contactInfoProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  try {
+    final supabase = Supabase.instance.client;
+    final response = await supabase
+        .from('app_settings')
+        .select()
+        .eq('key', 'contact_info')
+        .maybeSingle();
+    
+    if (response != null && response['value'] != null) {
+      return Map<String, dynamic>.from(response['value'] as Map);
+    }
+  } catch (e) {
+    debugPrint('Error fetching contact info: $e');
+  }
+  
+  // Default values
+  return {
+    'phone': '53 518 054',
+    'email': 'lyceepythagore19@gmail.com',
+    'address': 'Rue El Emir Faicel, Kairouan',
+    'facebook': 'https://www.facebook.com/profile.php?id=100064041700592',
+    'maps': 'https://www.google.com/maps/dir/35.831194,10.594667/35.6744015,10.1017/@35.7573801,10.0281956,10z',
+    'website': 'https://aziz-tounsi.github.io/',
+    'hours': 'Lun - Sam: 08:00 - 17:00',
+  };
+});
+
 class ContactScreen extends ConsumerWidget {
   const ContactScreen({super.key});
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _launchPhone(String phone) async {
+    final uri = Uri(scheme: 'tel', path: phone.replaceAll(' ', ''));
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _launchEmail(String email) async {
+    final uri = Uri(scheme: 'mailto', path: email);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final contactInfoAsync = ref.watch(contactInfoProvider);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: Text(l10n.contact),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.paddingM),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(AppSizes.paddingL),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.primary,
-                    AppColors.primary.withValues(alpha: 0.7),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
-              ),
-              child: Column(
-                children: [
-                  const Icon(
-                    Icons.support_agent,
-                    color: Colors.white,
-                    size: 64,
-                  ),
-                  const SizedBox(height: AppSizes.paddingM),
-                  Text(
-                    l10n.needHelp,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: AppSizes.fontXL,
-                      fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF3B82F6).withOpacity(0.15),
+              AppColors.background,
+              AppColors.background,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: contactInfoAsync.when(
+            data: (contactInfo) => CustomScrollView(
+              slivers: [
+                // Custom App Bar
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          l10n.contact,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: AppSizes.paddingS),
-                  Text(
-                    l10n.contactDesc,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: AppSizes.fontM,
-                    ),
+                ),
+                
+                // Content
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Header Card - Glassy
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(24),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: Container(
+                            padding: const EdgeInsets.all(28),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.5),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Icon(
+                                    Icons.support_agent,
+                                    color: Color(0xFF3B82F6),
+                                    size: 48,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  l10n.needHelp,
+                                  style: const TextStyle(
+                                    color: Color(0xFF1F2937),
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  l10n.contactDesc,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 15,
+                                    height: 1.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      
+                      // Contact Options
+                      _PremiumContactCard(
+                        icon: Icons.phone_outlined,
+                        iconColor: const Color(0xFF10B981),
+                        title: l10n.callUs,
+                        subtitle: contactInfo['phone'] ?? '',
+                        onTap: () => _launchPhone(contactInfo['phone'] ?? ''),
+                      ),
+                      const SizedBox(height: 12),
+                      _PremiumContactCard(
+                        icon: Icons.email_outlined,
+                        iconColor: const Color(0xFF3B82F6),
+                        title: 'Email',
+                        subtitle: contactInfo['email'] ?? '',
+                        onTap: () => _launchEmail(contactInfo['email'] ?? ''),
+                      ),
+                      const SizedBox(height: 12),
+                      _PremiumContactCard(
+                        icon: Icons.location_on_outlined,
+                        iconColor: const Color(0xFFEF4444),
+                        title: l10n.visitUs,
+                        subtitle: contactInfo['address'] ?? '',
+                        onTap: () => _launchUrl(contactInfo['maps'] ?? ''),
+                      ),
+                      const SizedBox(height: 12),
+                      _PremiumContactCard(
+                        icon: Icons.access_time_outlined,
+                        iconColor: const Color(0xFFF59E0B),
+                        title: l10n.officeHours,
+                        subtitle: contactInfo['hours'] ?? '',
+                        onTap: null,
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      // Social Media Section
+                      Text(
+                        l10n.followUs,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _PremiumSocialButtonSmall(
+                            icon: Icons.facebook,
+                            color: const Color(0xFF1877F2),
+                            onTap: () => _launchUrl(contactInfo['facebook'] ?? ''),
+                          ),
+                          const SizedBox(width: 12),
+                          _PremiumSocialButtonSmall(
+                            icon: Icons.public,
+                            color: const Color(0xFF3B82F6),
+                            onTap: () => _launchUrl(contactInfo['website'] ?? ''),
+                          ),
+                          const SizedBox(width: 12),
+                          _PremiumSocialButtonSmall(
+                            icon: Icons.map_outlined,
+                            color: const Color(0xFFEF4444),
+                            onTap: () => _launchUrl(contactInfo['maps'] ?? ''),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                    ]),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSizes.paddingL),
-            // Contact options
-            _ContactCard(
-              icon: Icons.email,
-              color: AppColors.tileMessages,
-              title: l10n.emailUs,
-              subtitle: 'contact@isgc.ma',
-              onTap: () {
-                // TODO: Open email client
-              },
-            ),
-            _ContactCard(
-              icon: Icons.phone,
-              color: AppColors.success,
-              title: l10n.callUs,
-              subtitle: '+212 5XX XX XX XX',
-              onTap: () {
-                // TODO: Open phone dialer
-              },
-            ),
-            _ContactCard(
-              icon: Icons.location_on,
-              color: AppColors.error,
-              title: l10n.visitUs,
-              subtitle: 'Rue de l\'école, Casablanca',
-              onTap: () {
-                // TODO: Open maps
-              },
-            ),
-            _ContactCard(
-              icon: Icons.access_time,
-              color: AppColors.tileEmploi,
-              title: l10n.officeHours,
-              subtitle: l10n.officeHoursValue,
-              onTap: null,
-            ),
-            const SizedBox(height: AppSizes.paddingL),
-            // Social media
-            Text(
-              l10n.followUs,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: AppSizes.paddingM),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _SocialButton(
-                  icon: Icons.facebook,
-                  color: const Color(0xFF1877F2),
-                  onTap: () {},
-                ),
-                const SizedBox(width: AppSizes.paddingM),
-                _SocialButton(
-                  icon: Icons.camera_alt,
-                  color: const Color(0xFFE4405F),
-                  onTap: () {},
-                ),
-                const SizedBox(width: AppSizes.paddingM),
-                _SocialButton(
-                  icon: Icons.link,
-                  color: const Color(0xFF0A66C2),
-                  onTap: () {},
-                ),
-                const SizedBox(width: AppSizes.paddingM),
-                _SocialButton(
-                  icon: Icons.public,
-                  color: AppColors.primary,
-                  onTap: () {},
                 ),
               ],
             ),
-          ],
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) => const Center(child: Text('Erreur de chargement')),
+          ),
         ),
       ),
     );
   }
 }
 
-class _ContactCard extends StatelessWidget {
+class _PremiumContactCard extends StatelessWidget {
   final IconData icon;
-  final Color color;
+  final Color iconColor;
   final String title;
   final String subtitle;
   final VoidCallback? onTap;
 
-  const _ContactCard({
+  const _PremiumContactCard({
     required this.icon,
-    required this.color,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     this.onTap,
@@ -161,49 +285,81 @@ class _ContactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSizes.paddingM),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppSizes.cardBorderRadius),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(AppSizes.paddingM),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(AppSizes.radiusM),
-          ),
-          child: Icon(icon, color: color),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        title: Text(
-          title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
               ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+              child: Icon(icon, color: iconColor, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
+            ),
+            if (onTap != null)
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.grey[400],
+                ),
+              ),
+          ],
         ),
-        trailing: onTap != null
-            ? Icon(Icons.chevron_right, color: AppColors.textLight)
-            : null,
-        onTap: onTap,
       ),
     );
   }
 }
 
-class _SocialButton extends StatelessWidget {
+class _PremiumSocialButtonSmall extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
 
-  const _SocialButton({
+  const _PremiumSocialButtonSmall({
     required this.icon,
     required this.color,
     required this.onTap,
@@ -211,17 +367,22 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppSizes.radiusL),
       child: Container(
-        width: 50,
-        height: 50,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(AppSizes.radiusL),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
-        child: Icon(icon, color: color),
+        child: Icon(icon, color: color, size: 22),
       ),
     );
   }

@@ -187,14 +187,55 @@ class ProfileScreen extends ConsumerWidget {
                       title: l10n.about,
                       onTap: () => context.push('/about'),
                     ),
-                    const Divider(height: 1),
-                    _SettingsTile(
-                      icon: Icons.logout_rounded,
-                      title: l10n.logout,
-                      onTap: () => _showLogoutDialog(context, ref),
-                      isDestructive: true,
-                    ),
                   ],
+                ),
+              ),
+              
+              // Premium Logout Button
+              const SizedBox(height: AppSizes.paddingL),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSizes.paddingM),
+                child: GestureDetector(
+                  onTap: () => _showLogoutDialog(context, ref),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.error.withOpacity(0.9),
+                          AppColors.error,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(50),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.error.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.logout_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          l10n.logout,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               
