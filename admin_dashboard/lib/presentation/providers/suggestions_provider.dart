@@ -1,4 +1,7 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿// ignore_for_file: unused_local_variable
+
+import 'dart:ui';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/supabase_config.dart';
 
 // =====================================================
@@ -40,57 +43,134 @@ class Suggestion {
     this.attachments = const [],
   });
 
-  factory Suggestion.fromJson(Map<String, dynamic> json, {List<SuggestionAttachment>? attachments, Map<String, dynamic>? studentInfo}) {
+  factory Suggestion.fromJson(
+    Map<String, dynamic> json, {
+    List<SuggestionAttachment>? attachments,
+    Map<String, dynamic>? studentInfo,
+  }) {
     // Get student info from either denormalized fields, joined users, or provided studentInfo
     final users = json['users'] as Map<String, dynamic>?;
     final enrollment = studentInfo?['enrollment'] as Map<String, dynamic>?;
     final classes = enrollment?['classes'] as Map<String, dynamic>?;
-    
-    String? studentName = json['student_name']?.toString() ?? 
-                          users?['full_name']?.toString() ?? 
-                          studentInfo?['full_name']?.toString();
-    String? studentCode = json['student_code']?.toString() ?? 
-                          enrollment?['student_code']?.toString();
+
+    String? studentName =
+        json['student_name']?.toString() ??
+        users?['full_name']?.toString() ??
+        studentInfo?['full_name']?.toString();
+    String? studentCode =
+        json['student_code']?.toString() ??
+        enrollment?['student_code']?.toString();
     String? className = json['class_name']?.toString();
     if (className == null && classes != null) {
       final level = classes['level']?.toString() ?? '';
       final name = classes['name']?.toString() ?? '';
       className = '$level $name'.trim();
     }
-    
+
     // Content can be in 'body', 'content', or 'message' fields
-    String content = json['body']?.toString() ?? 
-                     json['content']?.toString() ?? 
-                     json['message']?.toString() ?? '';
-    
+    String content =
+        json['body']?.toString() ??
+        json['content']?.toString() ??
+        json['message']?.toString() ??
+        '';
+
     return Suggestion(
       id: json['id']?.toString() ?? '',
       studentId: json['student_id']?.toString() ?? '',
       studentName: studentName,
       studentCode: studentCode,
       className: className,
-      classId: json['class_id']?.toString() ?? enrollment?['class_id']?.toString(),
+      classId:
+          json['class_id']?.toString() ?? enrollment?['class_id']?.toString(),
       subject: json['subject']?.toString() ?? '',
       content: content,
       status: json['status']?.toString() ?? 'sent',
       suggestionType: json['suggestion_type']?.toString() ?? 'general',
       hasAttachment: json['has_attachment'] as bool? ?? false,
-      isRead: json['is_read'] as bool? ?? (json['status'] == 'read' || json['status'] == 'replied'),
-      readAt: json['read_at'] != null ? DateTime.tryParse(json['read_at'].toString()) : null,
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      isRead:
+          json['is_read'] as bool? ??
+          (json['status'] == 'read' || json['status'] == 'replied'),
+      readAt: json['read_at'] != null
+          ? DateTime.tryParse(json['read_at'].toString())
+          : null,
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
       attachments: attachments ?? [],
     );
   }
-  
+
   String get typeLabel {
     switch (suggestionType) {
-      case 'reclamation_note': return 'Réclamation note';
-      case 'absence': return 'Absence';
-      case 'paiement': return 'Paiement';
-      case 'emploi_temps': return 'Emploi du temps';
-      case 'vie_scolaire': return 'Vie scolaire';
-      case 'autre': return 'Autre';
-      default: return 'Général';
+      case 'reclamation_note':
+        return 'Réclamation note';
+      case 'absence':
+        return 'Absence / Justification';
+      case 'emploi_temps':
+        return 'Emploi du temps';
+      case 'inscription':
+        return 'Inscription';
+      case 'paiement':
+        return 'Paiement / Frais';
+      case 'stage':
+        return 'Stage / PFE';
+      case 'orientation':
+        return 'Orientation';
+      case 'bourse':
+        return 'Bourse / Aide';
+      case 'transport':
+        return 'Transport';
+      case 'restauration':
+        return 'Restauration';
+      case 'bibliotheque':
+        return 'Bibliothèque';
+      case 'vie_universitaire':
+        return 'Vie universitaire';
+      case 'infrastructure':
+        return 'Infrastructure';
+      case 'securite':
+        return 'Sécurité';
+      case 'autre':
+        return 'Autre';
+      default:
+        return 'Général';
+    }
+  }
+
+  Color get typeColor {
+    switch (suggestionType) {
+      case 'reclamation_note':
+        return const Color(0xFFEF4444);
+      case 'absence':
+        return const Color(0xFFF59E0B);
+      case 'emploi_temps':
+        return const Color(0xFF3B82F6);
+      case 'inscription':
+        return const Color(0xFF8B5CF6);
+      case 'paiement':
+        return const Color(0xFF10B981);
+      case 'stage':
+        return const Color(0xFF6366F1);
+      case 'orientation':
+        return const Color(0xFFEC4899);
+      case 'bourse':
+        return const Color(0xFF14B8A6);
+      case 'transport':
+        return const Color(0xFF78716C);
+      case 'restauration':
+        return const Color(0xFFEAB308);
+      case 'bibliotheque':
+        return const Color(0xFF0EA5E9);
+      case 'vie_universitaire':
+        return const Color(0xFFA855F7);
+      case 'infrastructure':
+        return const Color(0xFF64748B);
+      case 'securite':
+        return const Color(0xFFDC2626);
+      case 'autre':
+        return const Color(0xFF6B7280);
+      default:
+        return const Color(0xFF9CA3AF);
     }
   }
 }
@@ -112,21 +192,22 @@ class SuggestionAttachment {
     this.fileSize,
   });
 
-  factory SuggestionAttachment.fromJson(Map<String, dynamic> json) => SuggestionAttachment(
-    id: json['id']?.toString() ?? '',
-    suggestionId: json['suggestion_id']?.toString() ?? '',
-    fileUrl: json['file_url']?.toString() ?? '',
-    fileName: json['file_name']?.toString() ?? '',
-    fileType: json['file_type']?.toString(),
-    fileSize: json['file_size'] as int?,
-  );
-  
+  factory SuggestionAttachment.fromJson(Map<String, dynamic> json) =>
+      SuggestionAttachment(
+        id: json['id']?.toString() ?? '',
+        suggestionId: json['suggestion_id']?.toString() ?? '',
+        fileUrl: json['file_url']?.toString() ?? '',
+        fileName: json['file_name']?.toString() ?? '',
+        fileType: json['file_type']?.toString(),
+        fileSize: json['file_size'] as int?,
+      );
+
   bool get isImage {
     final type = fileType?.toLowerCase() ?? '';
-    return type.startsWith('image/') || 
-           fileName.toLowerCase().endsWith('.jpg') ||
-           fileName.toLowerCase().endsWith('.jpeg') ||
-           fileName.toLowerCase().endsWith('.png');
+    return type.startsWith('image/') ||
+        fileName.toLowerCase().endsWith('.jpg') ||
+        fileName.toLowerCase().endsWith('.jpeg') ||
+        fileName.toLowerCase().endsWith('.png');
   }
 }
 
@@ -140,7 +221,7 @@ class SuggestionsState {
   final bool sortAscending;
   final DateTime? dateFrom;
   final DateTime? dateTo;
-  
+
   SuggestionsState({
     this.suggestions = const [],
     this.statusFilter = 'all',
@@ -158,18 +239,24 @@ class SuggestionsState {
       // Status filter
       if (statusFilter == 'unread' && s.isRead) return false;
       if (statusFilter == 'read' && !s.isRead) return false;
-      if (statusFilter != 'all' && statusFilter != 'unread' && statusFilter != 'read' && s.status != statusFilter) return false;
-      
+      if (statusFilter != 'all' &&
+          statusFilter != 'unread' &&
+          statusFilter != 'read' &&
+          s.status != statusFilter)
+        return false;
+
       // Type filter
       if (typeFilter != 'all' && s.suggestionType != typeFilter) return false;
-      
+
       // Class filter
       if (classFilter != 'all' && s.classId != classFilter) return false;
-      
+
       // Date range filter
       if (dateFrom != null && s.createdAt.isBefore(dateFrom!)) return false;
-      if (dateTo != null && s.createdAt.isAfter(dateTo!.add(const Duration(days: 1)))) return false;
-      
+      if (dateTo != null &&
+          s.createdAt.isAfter(dateTo!.add(const Duration(days: 1))))
+        return false;
+
       // Search filter
       if (searchQuery.isNotEmpty) {
         final query = searchQuery.toLowerCase();
@@ -183,10 +270,10 @@ class SuggestionsState {
         ].join(' ').toLowerCase();
         if (!searchFields.contains(query)) return false;
       }
-      
+
       return true;
     }).toList();
-    
+
     // Sort
     list.sort((a, b) {
       int result;
@@ -205,10 +292,10 @@ class SuggestionsState {
       }
       return sortAscending ? result : -result;
     });
-    
+
     return list;
   }
-  
+
   // Get unique classes for filter dropdown
   List<String> get uniqueClasses {
     final classes = suggestions
@@ -218,7 +305,7 @@ class SuggestionsState {
         .toList();
     return classes;
   }
-  
+
   // Get unique class names map
   Map<String, String> get classNames {
     final map = <String, String>{};
@@ -229,10 +316,11 @@ class SuggestionsState {
     }
     return map;
   }
-  
+
   // Statistics
   int get unreadCount => suggestions.where((s) => !s.isRead).length;
-  int get pendingCount => suggestions.where((s) => s.status == 'pending').length;
+  int get pendingCount =>
+      suggestions.where((s) => s.status == 'pending').length;
 
   SuggestionsState copyWith({
     List<Suggestion>? suggestions,
@@ -244,18 +332,17 @@ class SuggestionsState {
     bool? sortAscending,
     DateTime? dateFrom,
     DateTime? dateTo,
-  }) =>
-    SuggestionsState(
-      suggestions: suggestions ?? this.suggestions,
-      statusFilter: statusFilter ?? this.statusFilter,
-      typeFilter: typeFilter ?? this.typeFilter,
-      classFilter: classFilter ?? this.classFilter,
-      searchQuery: searchQuery ?? this.searchQuery,
-      sortBy: sortBy ?? this.sortBy,
-      sortAscending: sortAscending ?? this.sortAscending,
-      dateFrom: dateFrom ?? this.dateFrom,
-      dateTo: dateTo ?? this.dateTo,
-    );
+  }) => SuggestionsState(
+    suggestions: suggestions ?? this.suggestions,
+    statusFilter: statusFilter ?? this.statusFilter,
+    typeFilter: typeFilter ?? this.typeFilter,
+    classFilter: classFilter ?? this.classFilter,
+    searchQuery: searchQuery ?? this.searchQuery,
+    sortBy: sortBy ?? this.sortBy,
+    sortAscending: sortAscending ?? this.sortAscending,
+    dateFrom: dateFrom ?? this.dateFrom,
+    dateTo: dateTo ?? this.dateTo,
+  );
 }
 
 class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
@@ -267,9 +354,13 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
     final user = supabase.auth.currentUser;
     if (user == null) throw Exception('Non connecté');
 
-    final profile = await supabase.from('users').select('school_id').eq('id', user.id).single();
+    final profile = await supabase
+        .from('users')
+        .select('school_id')
+        .eq('id', user.id)
+        .single();
     final schoolId = profile['school_id'];
-    
+
     // Fetch suggestions with user join
     final data = await supabase
         .from('suggestions')
@@ -282,14 +373,14 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
       final suggestionSchool = e['school_id'];
       return userSchool == schoolId || suggestionSchool == schoolId;
     }).toList();
-    
+
     // Get student IDs to fetch enrollment info
     final studentIds = suggestionsData
         .map((s) => s['student_id'] as String?)
         .where((id) => id != null)
         .toSet()
         .toList();
-    
+
     // Fetch enrollment info for students (to get class info)
     Map<String, Map<String, dynamic>> studentInfoMap = {};
     if (studentIds.isNotEmpty) {
@@ -299,7 +390,7 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
             .select('student_id, student_code, class_id, classes(name, level)')
             .inFilter('student_id', studentIds)
             .eq('is_active', true);
-        
+
         for (final e in (enrollments as List)) {
           final studentId = e['student_id'] as String?;
           if (studentId != null) {
@@ -310,10 +401,10 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
         // enrollments table might not exist or have different schema
       }
     }
-    
+
     // Get suggestion IDs to fetch ALL attachments (don't rely on has_attachment flag)
     final allIds = suggestionsData.map((s) => s['id'] as String).toList();
-    
+
     // Fetch attachments for all suggestions
     Map<String, List<SuggestionAttachment>> attachmentsMap = {};
     if (allIds.isNotEmpty) {
@@ -322,78 +413,87 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
             .from('suggestion_attachments')
             .select()
             .inFilter('suggestion_id', allIds);
-        
+
         for (final att in (attachmentsResponse as List)) {
           final attachment = SuggestionAttachment.fromJson(att);
-          attachmentsMap.putIfAbsent(attachment.suggestionId, () => []).add(attachment);
+          attachmentsMap
+              .putIfAbsent(attachment.suggestionId, () => [])
+              .add(attachment);
         }
       } catch (_) {
         // suggestion_attachments table might not exist
       }
     }
-    
+
     final suggestions = suggestionsData.map((e) {
       final id = e['id'] as String;
       final studentId = e['student_id'] as String?;
       return Suggestion.fromJson(
-        e, 
+        e,
         attachments: attachmentsMap[id] ?? [],
         studentInfo: studentId != null ? studentInfoMap[studentId] : null,
       );
     }).toList();
-    
+
     return SuggestionsState(suggestions: suggestions);
   }
 
   void setStatusFilter(String status) {
     state.whenData((s) => state = AsyncData(s.copyWith(statusFilter: status)));
   }
-  
+
   void setTypeFilter(String type) {
     state.whenData((s) => state = AsyncData(s.copyWith(typeFilter: type)));
   }
-  
+
   void setClassFilter(String classId) {
     state.whenData((s) => state = AsyncData(s.copyWith(classFilter: classId)));
   }
-  
+
   void setSearchQuery(String query) {
     state.whenData((s) => state = AsyncData(s.copyWith(searchQuery: query)));
   }
-  
+
   void setSortBy(String field) {
     state.whenData((s) {
       final ascending = s.sortBy == field ? !s.sortAscending : false;
       state = AsyncData(s.copyWith(sortBy: field, sortAscending: ascending));
     });
   }
-  
+
   void setDateRange(DateTime? from, DateTime? to) {
-    state.whenData((s) => state = AsyncData(s.copyWith(dateFrom: from, dateTo: to)));
+    state.whenData(
+      (s) => state = AsyncData(s.copyWith(dateFrom: from, dateTo: to)),
+    );
   }
-  
+
   void clearFilters() {
-    state.whenData((s) => state = AsyncData(SuggestionsState(suggestions: s.suggestions)));
+    state.whenData(
+      (s) => state = AsyncData(SuggestionsState(suggestions: s.suggestions)),
+    );
   }
 
   Future<void> updateStatus(String id, String status) async {
-    await SupabaseConfig.client.from('suggestions').update({'status': status}).eq('id', id);
+    await SupabaseConfig.client
+        .from('suggestions')
+        .update({'status': status})
+        .eq('id', id);
     ref.invalidateSelf();
   }
-  
+
   Future<void> markAsRead(String id) async {
-    await SupabaseConfig.client.from('suggestions').update({
-      'is_read': true,
-      'read_at': DateTime.now().toIso8601String(),
-    }).eq('id', id);
+    await SupabaseConfig.client
+        .from('suggestions')
+        .update({'is_read': true, 'read_at': DateTime.now().toIso8601String()})
+        .eq('id', id);
     ref.invalidateSelf();
   }
-  
+
   Future<void> markAsUnread(String id) async {
-    await SupabaseConfig.client.from('suggestions').update({
-      'is_read': false,
-      'read_at': null,
-    }).eq('id', id);
+    await SupabaseConfig.client
+        .from('suggestions')
+        .update({'is_read': false, 'read_at': null})
+        .eq('id', id);
     ref.invalidateSelf();
   }
 
@@ -401,9 +501,13 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
     final supabase = SupabaseConfig.client;
     final user = supabase.auth.currentUser;
     if (user == null) return;
-    
+
     // Get admin name
-    final profile = await supabase.from('users').select('full_name').eq('id', user.id).maybeSingle();
+    final profile = await supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
     final adminName = profile?['full_name'] ?? 'Administration';
 
     try {
@@ -417,20 +521,26 @@ class SuggestionsNotifier extends AsyncNotifier<SuggestionsState> {
     }
     await updateStatus(suggestionId, 'replied');
   }
-  
+
   Future<void> delete(String id) async {
     await SupabaseConfig.client.from('suggestions').delete().eq('id', id);
     ref.invalidateSelf();
   }
-  
+
   Future<void> deleteMultiple(List<String> ids) async {
-    await SupabaseConfig.client.from('suggestions').delete().inFilter('id', ids);
+    await SupabaseConfig.client
+        .from('suggestions')
+        .delete()
+        .inFilter('id', ids);
     ref.invalidateSelf();
   }
-  
+
   Future<void> refresh() async {
     ref.invalidateSelf();
   }
 }
 
-final suggestionsProvider = AsyncNotifierProvider<SuggestionsNotifier, SuggestionsState>(SuggestionsNotifier.new);
+final suggestionsProvider =
+    AsyncNotifierProvider<SuggestionsNotifier, SuggestionsState>(
+      SuggestionsNotifier.new,
+    );

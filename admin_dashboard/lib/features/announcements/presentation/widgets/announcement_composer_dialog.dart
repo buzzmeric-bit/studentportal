@@ -331,8 +331,8 @@ class _AnnouncementComposerDialogState extends State<AnnouncementComposerDialog>
                         segments: const [
                           ButtonSegment(
                             value: AnnouncementScope.global,
-                            label: Text('Note d\'info'),
-                            icon: Icon(Icons.public),
+                            label: Text('Notification'),
+                            icon: Icon(Icons.notifications),
                           ),
                           ButtonSegment(
                             value: AnnouncementScope.classScope,
@@ -568,7 +568,7 @@ class _AnnouncementComposerDialogState extends State<AnnouncementComposerDialog>
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            _scope == AnnouncementScope.global ? 'Note d\'info' : 'Messages',
+                            _scope == AnnouncementScope.global ? 'Notification' : 'Messages',
                             style: const TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w500),
                           ),
                         ),
@@ -900,10 +900,8 @@ class _AnnouncementComposerDialogState extends State<AnnouncementComposerDialog>
   }
 
   void _removeExistingAttachment(int index) {
-    final att = _existingAttachments[index];
-    
     // TODO: Call repository to delete the attachment from server
-    // _repository.deleteAttachment(att.id);
+    // _repository.deleteAttachment(_existingAttachments[index].id);
 
     setState(() {
       _existingAttachments.removeAt(index);

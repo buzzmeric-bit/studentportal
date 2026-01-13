@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../core/l10n/app_localizations.dart';
+import '../providers/announcements_provider.dart';
 
 class BottomNavDrawer extends ConsumerWidget {
   const BottomNavDrawer({super.key});
@@ -11,6 +12,14 @@ class BottomNavDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+
+    // Get real counts from providers
+    final messagesAsync = ref.watch(classMessagesProvider);
+    final notificationsAsync = ref.watch(globalAnnouncementsProvider);
+
+    final messagesCount = messagesAsync.whenOrNull(data: (m) => m.length) ?? 0;
+    final notificationsCount =
+        notificationsAsync.whenOrNull(data: (n) => n.length) ?? 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -44,7 +53,7 @@ class BottomNavDrawer extends ConsumerWidget {
                   icon: Icons.mail_rounded,
                   label: l10n.messages,
                   onTap: () => context.push('/messages'),
-                  badgeCount: 3, // Example badge
+                  badgeCount: messagesCount > 0 ? messagesCount : null,
                 ),
               ),
               Expanded(
@@ -52,7 +61,9 @@ class BottomNavDrawer extends ConsumerWidget {
                   icon: Icons.notifications_rounded,
                   label: l10n.notifications,
                   onTap: () => context.push('/note-info'),
-                  badgeCount: 1, // Example badge
+                  badgeCount: notificationsCount > 0
+                      ? notificationsCount
+                      : null,
                 ),
               ),
               Expanded(
@@ -99,19 +110,15 @@ class _NavItem extends StatelessWidget {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  icon,
-                  size: 26,
-                  color: AppColors.textSecondary,
-                ),
+                Icon(icon, size: 26, color: AppColors.textSecondary),
                 const SizedBox(height: 4),
                 Text(
                   label,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

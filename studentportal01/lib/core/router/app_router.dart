@@ -8,6 +8,7 @@ import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/notifications/notifications_screen.dart';
 import '../../presentation/screens/messages/messages_screen_new.dart';
 import '../../presentation/screens/suggestions/suggestions_screen_new.dart';
+import '../../presentation/screens/suggestions/write_suggestion_screen.dart';
 import '../../presentation/screens/absences/absences_screen.dart';
 import '../../presentation/screens/resultats/resultats_screen.dart';
 import '../../presentation/screens/emploi/emploi_screen.dart';
@@ -29,6 +30,8 @@ int _getNavBarIndex(String location) {
   if (location == '/notifications') return 2;
   if (location == '/stats') return 3;
   if (location.startsWith('/courses')) return 4;
+  if (location == '/suggestions') return 0; // Suggestions should highlight home
+  if (location == '/write-suggestion') return 0; // Write suggestion should highlight home
   return 0;
 }
 
@@ -106,6 +109,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               child: const CoursesScreen(),
             ),
           ),
+          GoRoute(
+            path: '/suggestions',
+            name: 'suggestions',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const SuggestionsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/write-suggestion',
+            name: 'write-suggestion',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const WriteSuggestionScreen(),
+            ),
+          ),
         ],
       ),
       
@@ -117,11 +134,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final courseId = state.pathParameters['courseId']!;
           return CourseDetailScreen(courseId: courseId);
         },
-      ),
-      GoRoute(
-        path: '/suggestions',
-        name: 'suggestions',
-        builder: (context, state) => const SuggestionsScreen(),
       ),
       GoRoute(
         path: '/absences',

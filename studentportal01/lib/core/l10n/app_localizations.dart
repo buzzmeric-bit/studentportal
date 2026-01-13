@@ -65,7 +65,6 @@ class AppLocalizations {
       'contact': 'Contact Us',
       'home': 'Home',
       'notifications': 'Notifications',
-      'profile': 'Profile',
       
       // Absences
       'absence_list': 'Absence: List of Periods',
@@ -140,7 +139,7 @@ class AppLocalizations {
       'light_theme': 'Light',
       'dark_theme': 'Dark',
       'system_theme': 'System',
-      'notifications': 'Notifications',
+      'notifications_enabled': 'Notifications',
       
       // Common
       'loading': 'Loading...',
@@ -303,7 +302,7 @@ class AppLocalizations {
       'sign_up': 'S\'inscrire',
       
       // Home Menu Items
-      'note_info': 'Note d\'info',
+      'note_info': 'Notifications',
       'messages': 'Messages',
       'suggestions': 'Suggestions',
       'absences': 'Absences',
@@ -318,7 +317,6 @@ class AppLocalizations {
       'contact': 'Contactez-nous',
       'home': 'Accueil',
       'notifications': 'Notifications',
-      'profile': 'Profil',
       
       // Absences
       'absence_list': 'Absence: Liste des périodes',
@@ -393,7 +391,7 @@ class AppLocalizations {
       'light_theme': 'Clair',
       'dark_theme': 'Sombre',
       'system_theme': 'Système',
-      'notifications': 'Notifications',
+      'notifications_enabled': 'Notifications',
       
       // Common
       'loading': 'Chargement...',

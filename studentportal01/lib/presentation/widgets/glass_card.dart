@@ -25,7 +25,8 @@ class GlassCard extends StatefulWidget {
   State<GlassCard> createState() => _GlassCardState();
 }
 
-class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMixin {
+class _GlassCardState extends State<GlassCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -36,9 +37,10 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
       vsync: this,
       duration: const Duration(milliseconds: 150),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -50,7 +52,7 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final isIconLeft = widget.iconAlignment == Alignment.topLeft;
-    
+
     return GestureDetector(
       onTapDown: (_) => _controller.forward(),
       onTapUp: (_) {
@@ -87,14 +89,14 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
                 child: Stack(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Icon Row
                           Row(
-                            mainAxisAlignment: isIconLeft 
-                                ? MainAxisAlignment.start 
+                            mainAxisAlignment: isIconLeft
+                                ? MainAxisAlignment.start
                                 : MainAxisAlignment.end,
                             children: [
                               Container(
@@ -109,7 +111,8 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
                                   ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: widget.gradientColors.first.withOpacity(0.35),
+                                      color: widget.gradientColors.first
+                                          .withOpacity(0.35),
                                       blurRadius: 16,
                                       offset: const Offset(0, 6),
                                     ),
@@ -154,7 +157,7 @@ class _GlassCardState extends State<GlassCard> with SingleTickerProviderStateMix
                         ],
                       ),
                     ),
-                    
+
                     // Badge
                     if (widget.badgeCount != null && widget.badgeCount! > 0)
                       Positioned(

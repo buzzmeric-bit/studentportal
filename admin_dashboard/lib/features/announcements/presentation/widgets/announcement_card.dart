@@ -52,7 +52,7 @@ class AnnouncementCard extends StatelessWidget {
                     ),
                     child: Text(
                       announcement.scope == AnnouncementScope.global
-                          ? 'Note d\'info'
+                          ? 'Notification'
                           : 'Message',
                       style: TextStyle(
                         fontSize: 12,

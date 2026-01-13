@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -234,7 +233,7 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       
       // Upload attachments (using bytes directly)
       if (hasValidAttachments && storageBucket != null) {
-        for (final file in attachments!) {
+        for (final file in attachments) {
           try {
             final bytes = file.bytes as Uint8List;
             final fileName = file.name as String;

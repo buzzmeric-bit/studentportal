@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../providers/announcements_provider.dart';
 
-class BubbleNavBar extends StatefulWidget {
+class BubbleNavBar extends ConsumerStatefulWidget {
   final int currentIndex;
   
   const BubbleNavBar({
@@ -11,43 +13,48 @@ class BubbleNavBar extends StatefulWidget {
   });
 
   @override
-  State<BubbleNavBar> createState() => _BubbleNavBarState();
+  ConsumerState<BubbleNavBar> createState() => _BubbleNavBarState();
 }
 
-class _BubbleNavBarState extends State<BubbleNavBar> with SingleTickerProviderStateMixin {
+class _BubbleNavBarState extends ConsumerState<BubbleNavBar> with SingleTickerProviderStateMixin {
   late int _selectedIndex;
   late AnimationController _animationController;
   late Animation<double> _animation;
 
-  final List<_NavItem> _items = const [
-    _NavItem(
-      icon: Icons.home_rounded,
-      label: 'Accueil',
-      route: '/',
-    ),
-    _NavItem(
-      icon: Icons.mail_rounded,
-      label: 'Messages',
-      route: '/messages',
-      badgeCount: 3,
-    ),
-    _NavItem(
-      icon: Icons.notifications_rounded,
-      label: 'Notifications',
-      route: '/notifications',
-      badgeCount: 1,
-    ),
-    _NavItem(
-      icon: Icons.bar_chart_rounded,
-      label: 'Stats',
-      route: '/stats',
-    ),
-    _NavItem(
-      icon: Icons.auto_stories_rounded,
-      label: 'Cours',
-      route: '/courses',
-    ),
-  ];
+  List<_NavItem> _getNavItems() {
+    final messagesCount = ref.watch(classMessagesCountProvider);
+    final notificationsCount = ref.watch(globalAnnouncementsCountProvider);
+    
+    return [
+      const _NavItem(
+        icon: Icons.home_rounded,
+        label: 'Accueil',
+        route: '/',
+      ),
+      _NavItem(
+        icon: Icons.mail_rounded,
+        label: 'Messages',
+        route: '/messages',
+        badgeCount: messagesCount,
+      ),
+      _NavItem(
+        icon: Icons.notifications_rounded,
+        label: 'Notifications',
+        route: '/notifications',
+        badgeCount: notificationsCount,
+      ),
+      const _NavItem(
+        icon: Icons.bar_chart_rounded,
+        label: 'Stats',
+        route: '/stats',
+      ),
+      const _NavItem(
+        icon: Icons.auto_stories_rounded,
+        label: 'Cours',
+        route: '/courses',
+      ),
+    ];
+  }
 
   @override
   void initState() {
@@ -83,20 +90,21 @@ class _BubbleNavBarState extends State<BubbleNavBar> with SingleTickerProviderSt
   }
 
   void _onItemTapped(int index) {
-    if (_selectedIndex != index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-      _animationController.reset();
-      _animationController.forward();
-      
-      // Navigate using go to replace the current route
-      context.go(_items[index].route);
-    }
+    final items = _getNavItems();
+    setState(() {
+      _selectedIndex = index;
+    });
+    _animationController.reset();
+    _animationController.forward();
+    
+    // Always navigate, even if it's the same index (to go back to that page from anywhere)
+    context.go(items[index].route);
   }
 
   @override
   Widget build(BuildContext context) {
+    final items = _getNavItems();
+    
     return Container(
       height: 80,
       margin: EdgeInsets.zero,
@@ -129,7 +137,7 @@ class _BubbleNavBarState extends State<BubbleNavBar> with SingleTickerProviderSt
                   animation: _animation,
                   builder: (context, child) {
                     final screenWidth = MediaQuery.of(context).size.width;
-                    final itemWidth = screenWidth / _items.length;
+                    final itemWidth = screenWidth / items.length;
                     final bubbleOffset = (itemWidth * _selectedIndex) + (itemWidth / 2) - 28;
                     
                     return Positioned(
@@ -167,8 +175,8 @@ class _BubbleNavBarState extends State<BubbleNavBar> with SingleTickerProviderSt
                 // Nav Items
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(_items.length, (index) {
-                    final item = _items[index];
+                  children: List.generate(items.length, (index) {
+                    final item = items[index];
                     final isSelected = _selectedIndex == index;
                     
                     return Expanded(

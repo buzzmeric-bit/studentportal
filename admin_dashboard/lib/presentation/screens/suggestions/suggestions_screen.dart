@@ -1,4 +1,6 @@
-﻿import 'dart:async';
+﻿// ignore_for_file: unused_element
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -25,29 +27,75 @@ String _normalizeForSearch(String text) {
 /// Get all searchable fields for a suggestion (including formatted dates)
 String _getSearchableFields(Suggestion s) {
   final dateFormatter = DateFormat('dd/MM/yyyy HH:mm EEEE MMMM', 'fr_FR');
-  
-  // Type labels mapping
+
+  // Type labels mapping for Tunisian students
   String typeLabel;
   switch (s.suggestionType) {
-    case 'reclamation_note': typeLabel = 'réclamation note grade'; break;
-    case 'absence': typeLabel = 'absence manque'; break;
-    case 'paiement': typeLabel = 'paiement frais cotisation argent'; break;
-    case 'emploi_temps': typeLabel = 'emploi temps horaire planning'; break;
-    case 'vie_scolaire': typeLabel = 'vie scolaire discipline'; break;
-    case 'autre': typeLabel = 'autre'; break;
-    default: typeLabel = 'général general';
+    case 'reclamation_note':
+      typeLabel = 'réclamation note grade examen';
+      break;
+    case 'absence':
+      typeLabel = 'absence justification manque cours';
+      break;
+    case 'emploi_temps':
+      typeLabel = 'emploi temps horaire planning seance';
+      break;
+    case 'inscription':
+      typeLabel = 'inscription réinscription dossier';
+      break;
+    case 'paiement':
+      typeLabel = 'paiement frais scolarité cotisation argent';
+      break;
+    case 'orientation':
+      typeLabel = 'orientation filière changement spécialité';
+      break;
+    case 'bourse':
+      typeLabel = 'bourse aide sociale financière';
+      break;
+    case 'transport':
+      typeLabel = 'transport hébergement foyer bus';
+      break;
+    case 'restauration':
+      typeLabel = 'restauration resto universitaire cantine';
+      break;
+    case 'bibliotheque':
+      typeLabel = 'bibliothèque ressources livres';
+      break;
+    case 'vie_universitaire':
+      typeLabel = 'vie universitaire activités club';
+      break;
+    case 'infrastructure':
+      typeLabel = 'infrastructure équipements salle';
+      break;
+    case 'securite':
+      typeLabel = 'sécurité hygiène';
+      break;
+    case 'autre':
+      typeLabel = 'autre divers';
+      break;
+    default:
+      typeLabel = 'général general';
   }
-  
+
   // Status labels
   String statusLabel;
   switch (s.status) {
-    case 'pending': statusLabel = 'en attente pending'; break;
-    case 'in_review': statusLabel = 'en cours review examen'; break;
-    case 'replied': statusLabel = 'répondu reply'; break;
-    case 'closed': statusLabel = 'fermé closed'; break;
-    default: statusLabel = s.status;
+    case 'pending':
+      statusLabel = 'en attente pending';
+      break;
+    case 'in_review':
+      statusLabel = 'en cours review examen';
+      break;
+    case 'replied':
+      statusLabel = 'répondu reply';
+      break;
+    case 'closed':
+      statusLabel = 'fermé closed';
+      break;
+    default:
+      statusLabel = s.status;
   }
-  
+
   // Build all searchable text
   final fields = [
     s.subject,
@@ -61,20 +109,40 @@ String _getSearchableFields(Suggestion s) {
     s.isRead ? 'lu read' : 'non lu unread nouveau',
     s.hasAttachment ? 'pièce jointe fichier attachment' : '',
   ];
-  
+
   return fields.join(' ');
 }
 
 /// Highlight matching text in a string
-Widget _highlightText(String text, String query, TextStyle? baseStyle, {int maxLines = 2}) {
-  if (query.isEmpty) return Text(text, style: baseStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
-  
+Widget _highlightText(
+  String text,
+  String query,
+  TextStyle? baseStyle, {
+  int maxLines = 2,
+}) {
+  if (query.isEmpty)
+    return Text(
+      text,
+      style: baseStyle,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+
   final normalizedText = _normalizeForSearch(text);
   final normalizedQuery = _normalizeForSearch(query);
-  final tokens = normalizedQuery.split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
-  
-  if (tokens.isEmpty) return Text(text, style: baseStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
-  
+  final tokens = normalizedQuery
+      .split(RegExp(r'\s+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
+
+  if (tokens.isEmpty)
+    return Text(
+      text,
+      style: baseStyle,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+
   // Find all match positions
   List<_MatchRange> matches = [];
   for (final token in tokens) {
@@ -86,9 +154,15 @@ Widget _highlightText(String text, String query, TextStyle? baseStyle, {int maxL
       start = index + 1;
     }
   }
-  
-  if (matches.isEmpty) return Text(text, style: baseStyle, maxLines: maxLines, overflow: TextOverflow.ellipsis);
-  
+
+  if (matches.isEmpty)
+    return Text(
+      text,
+      style: baseStyle,
+      maxLines: maxLines,
+      overflow: TextOverflow.ellipsis,
+    );
+
   // Sort and merge overlapping ranges
   matches.sort((a, b) => a.start.compareTo(b.start));
   List<_MatchRange> merged = [];
@@ -96,29 +170,47 @@ Widget _highlightText(String text, String query, TextStyle? baseStyle, {int maxL
     if (merged.isEmpty || merged.last.end < m.start) {
       merged.add(m);
     } else {
-      merged.last = _MatchRange(merged.last.start, m.end > merged.last.end ? m.end : merged.last.end);
+      merged.last = _MatchRange(
+        merged.last.start,
+        m.end > merged.last.end ? m.end : merged.last.end,
+      );
     }
   }
-  
+
   // Build text spans
   List<TextSpan> spans = [];
   int lastEnd = 0;
   for (final m in merged) {
     if (m.start > lastEnd) {
-      spans.add(TextSpan(text: text.substring(lastEnd, m.start), style: baseStyle));
+      spans.add(
+        TextSpan(text: text.substring(lastEnd, m.start), style: baseStyle),
+      );
     }
-    spans.add(TextSpan(
-      text: text.substring(m.start, m.end),
-      style: baseStyle?.copyWith(backgroundColor: Colors.yellow.shade200, fontWeight: FontWeight.bold) ?? 
-             TextStyle(backgroundColor: Colors.yellow.shade200, fontWeight: FontWeight.bold),
-    ));
+    spans.add(
+      TextSpan(
+        text: text.substring(m.start, m.end),
+        style:
+            baseStyle?.copyWith(
+              backgroundColor: Colors.yellow.shade200,
+              fontWeight: FontWeight.bold,
+            ) ??
+            TextStyle(
+              backgroundColor: Colors.yellow.shade200,
+              fontWeight: FontWeight.bold,
+            ),
+      ),
+    );
     lastEnd = m.end;
   }
   if (lastEnd < text.length) {
     spans.add(TextSpan(text: text.substring(lastEnd), style: baseStyle));
   }
-  
-  return RichText(text: TextSpan(children: spans), maxLines: maxLines, overflow: TextOverflow.ellipsis);
+
+  return RichText(
+    text: TextSpan(children: spans),
+    maxLines: maxLines,
+    overflow: TextOverflow.ellipsis,
+  );
 }
 
 class _MatchRange {
@@ -140,14 +232,14 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
   bool _showFilters = false;
   final Set<String> _selectedIds = {};
   bool _selectionMode = false;
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     _searchDebounce?.cancel();
     super.dispose();
   }
-  
+
   void _toggleSelection(String id) {
     setState(() {
       if (_selectedIds.contains(id)) {
@@ -159,7 +251,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
       }
     });
   }
-  
+
   void _selectAll(List<Suggestion> suggestions) {
     setState(() {
       if (_selectedIds.length == suggestions.length) {
@@ -171,39 +263,49 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
       }
     });
   }
-  
+
   void _clearSelection() {
     setState(() {
       _selectedIds.clear();
       _selectionMode = false;
     });
   }
-  
+
   Future<void> _deleteSelected() async {
     if (_selectedIds.isEmpty) return;
-    
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Voulez-vous vraiment supprimer ${_selectedIds.length} suggestion(s) ?'),
+        content: Text(
+          'Voulez-vous vraiment supprimer ${_selectedIds.length} suggestion(s) ?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
-    
+
     if (confirm == true) {
-      await ref.read(suggestionsProvider.notifier).deleteMultiple(_selectedIds.toList());
+      await ref
+          .read(suggestionsProvider.notifier)
+          .deleteMultiple(_selectedIds.toList());
       _clearSelection();
     }
   }
-  
+
   void _onSearchChanged(String value) {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 300), () {
@@ -225,25 +327,30 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
               children: [
                 _buildTopBar(context, suggestionsAsync),
                 if (_showFilters) _buildFilterBar(context, suggestionsAsync),
-                Expanded(child: suggestionsAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error, size: 48, color: Colors.red),
-                        const SizedBox(height: 16),
-                        Text('Erreur: $e'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => ref.read(suggestionsProvider.notifier).refresh(),
-                          child: const Text('Réessayer'),
-                        ),
-                      ],
+                Expanded(
+                  child: suggestionsAsync.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error, size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Erreur: $e'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => ref
+                                .read(suggestionsProvider.notifier)
+                                .refresh(),
+                            child: const Text('Réessayer'),
+                          ),
+                        ],
+                      ),
                     ),
+                    data: (state) => _buildContent(context, ref, state),
                   ),
-                  data: (state) => _buildContent(context, ref, state),
-                )),
+                ),
               ],
             ),
           ),
@@ -252,7 +359,10 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, AsyncValue<SuggestionsState> suggestionsAsync) {
+  Widget _buildTopBar(
+    BuildContext context,
+    AsyncValue<SuggestionsState> suggestionsAsync,
+  ) {
     // Selection mode top bar
     if (_selectionMode) {
       return Container(
@@ -260,7 +370,9 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         decoration: BoxDecoration(
           color: Colors.blue.shade50,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
+          ],
         ),
         child: Row(
           children: [
@@ -270,65 +382,106 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
               tooltip: 'Annuler la sélection',
             ),
             const SizedBox(width: 8),
-            Text('${_selectedIds.length} sélectionné(s)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              '${_selectedIds.length} sélectionné(s)',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(width: 16),
             suggestionsAsync.whenOrNull(
-              data: (state) => TextButton.icon(
-                icon: Icon(_selectedIds.length == state.filtered.length ? Icons.deselect : Icons.select_all),
-                label: Text(_selectedIds.length == state.filtered.length ? 'Désélectionner tout' : 'Sélectionner tout'),
-                onPressed: () => _selectAll(state.filtered),
-              ),
-            ) ?? const SizedBox.shrink(),
+                  data: (state) => TextButton.icon(
+                    icon: Icon(
+                      _selectedIds.length == state.filtered.length
+                          ? Icons.deselect
+                          : Icons.select_all,
+                    ),
+                    label: Text(
+                      _selectedIds.length == state.filtered.length
+                          ? 'Désélectionner tout'
+                          : 'Sélectionner tout',
+                    ),
+                    onPressed: () => _selectAll(state.filtered),
+                  ),
+                ) ??
+                const SizedBox.shrink(),
             const Spacer(),
             ElevatedButton.icon(
               icon: const Icon(Icons.delete, size: 18),
               label: const Text('Supprimer'),
               onPressed: _deleteSelected,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),
       );
     }
-    
+
     // Normal top bar
     return Container(
       height: 72,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4),
+        ],
       ),
       child: Row(
         children: [
-          Text('Suggestions', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(
+            'Suggestions',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(width: 16),
           // Statistics badges
           suggestionsAsync.whenOrNull(
-            data: (state) => Row(
-              children: [
-                if (state.unreadCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text('${state.unreadCount} non lu(s)', style: TextStyle(color: Colors.blue.shade700, fontSize: 12)),
-                  ),
-                if (state.pendingCount > 0)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text('${state.pendingCount} en attente', style: TextStyle(color: Colors.orange.shade700, fontSize: 12)),
-                  ),
-              ],
-            ),
-          ) ?? const SizedBox.shrink(),
+                data: (state) => Row(
+                  children: [
+                    if (state.unreadCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${state.unreadCount} non lu(s)',
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    if (state.pendingCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${state.pendingCount} en attente',
+                          style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ) ??
+              const SizedBox.shrink(),
           const SizedBox(width: 24),
           // Search bar - same style as announcements
           SizedBox(
@@ -344,14 +497,22 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                         icon: const Icon(Icons.clear, size: 18),
                         onPressed: () {
                           _searchController.clear();
-                          ref.read(suggestionsProvider.notifier).setSearchQuery('');
+                          ref
+                              .read(suggestionsProvider.notifier)
+                              .setSearchQuery('');
                         },
                       )
                     : null,
                 filled: true,
                 fillColor: Colors.grey[100],
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
               ),
             ),
           ),
@@ -360,7 +521,9 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
           Badge(
             isLabelVisible: _hasActiveFilters(suggestionsAsync),
             child: IconButton(
-              icon: Icon(_showFilters ? Icons.filter_alt : Icons.filter_alt_outlined),
+              icon: Icon(
+                _showFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
+              ),
               tooltip: 'Filtres',
               onPressed: () => setState(() => _showFilters = !_showFilters),
               color: _showFilters ? Colors.blue : null,
@@ -377,124 +540,211 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
       ),
     );
   }
-  
+
   bool _hasActiveFilters(AsyncValue<SuggestionsState> suggestionsAsync) {
     return suggestionsAsync.whenOrNull(
-      data: (state) => state.statusFilter != 'all' ||
-          state.typeFilter != 'all' ||
-          state.classFilter != 'all' ||
-          state.dateFrom != null ||
-          state.dateTo != null,
-    ) ?? false;
-  }
-  
-  Widget _buildFilterBar(BuildContext context, AsyncValue<SuggestionsState> suggestionsAsync) {
-    return suggestionsAsync.whenOrNull(
-      data: (state) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey.shade50,
-          border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-        ),
-        child: Wrap(
-          spacing: 16,
-          runSpacing: 12,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            // Status filter
-            DropdownButton<String>(
-              value: state.statusFilter,
-              hint: const Text('Statut'),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('Tous les statuts')),
-                DropdownMenuItem(value: 'unread', child: Text('Non lus')),
-                DropdownMenuItem(value: 'read', child: Text('Lus')),
-                DropdownMenuItem(value: 'sent', child: Text('Envoyé')),
-                DropdownMenuItem(value: 'replied', child: Text('Répondu')),
-              ],
-              onChanged: (v) => ref.read(suggestionsProvider.notifier).setStatusFilter(v!),
-            ),
-            // Type filter
-            DropdownButton<String>(
-              value: state.typeFilter,
-              hint: const Text('Type'),
-              items: const [
-                DropdownMenuItem(value: 'all', child: Text('Tous les types')),
-                DropdownMenuItem(value: 'general', child: Text('Général')),
-                DropdownMenuItem(value: 'reclamation_note', child: Text('Réclamation note')),
-                DropdownMenuItem(value: 'absence', child: Text('Absence')),
-                DropdownMenuItem(value: 'paiement', child: Text('Paiement')),
-                DropdownMenuItem(value: 'emploi_temps', child: Text('Emploi du temps')),
-                DropdownMenuItem(value: 'vie_scolaire', child: Text('Vie scolaire')),
-                DropdownMenuItem(value: 'autre', child: Text('Autre')),
-              ],
-              onChanged: (v) => ref.read(suggestionsProvider.notifier).setTypeFilter(v!),
-            ),
-            // Class filter
-            if (state.uniqueClasses.isNotEmpty)
-              DropdownButton<String>(
-                value: state.classFilter,
-                hint: const Text('Classe'),
-                items: [
-                  const DropdownMenuItem(value: 'all', child: Text('Toutes les classes')),
-                  ...state.uniqueClasses.map((classId) => DropdownMenuItem(
-                    value: classId,
-                    child: Text(state.classNames[classId] ?? classId),
-                  )),
-                ],
-                onChanged: (v) => ref.read(suggestionsProvider.notifier).setClassFilter(v!),
-              ),
-            // Date range
-            OutlinedButton.icon(
-              icon: const Icon(Icons.calendar_today, size: 16),
-              label: Text(state.dateFrom != null 
-                  ? '${DateFormat('dd/MM').format(state.dateFrom!)} - ${state.dateTo != null ? DateFormat('dd/MM').format(state.dateTo!) : '...'}'
-                  : 'Période'),
-              onPressed: () async {
-                final range = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime.now().add(const Duration(days: 1)),
-                  initialDateRange: state.dateFrom != null && state.dateTo != null
-                      ? DateTimeRange(start: state.dateFrom!, end: state.dateTo!)
-                      : null,
-                );
-                if (range != null) {
-                  ref.read(suggestionsProvider.notifier).setDateRange(range.start, range.end);
-                }
-              },
-            ),
-            // Sort dropdown
-            DropdownButton<String>(
-              value: state.sortBy,
-              hint: const Text('Trier par'),
-              items: const [
-                DropdownMenuItem(value: 'date', child: Text('Date')),
-                DropdownMenuItem(value: 'class', child: Text('Classe')),
-                DropdownMenuItem(value: 'type', child: Text('Type')),
-                DropdownMenuItem(value: 'status', child: Text('Statut')),
-              ],
-              onChanged: (v) => ref.read(suggestionsProvider.notifier).setSortBy(v!),
-            ),
-            IconButton(
-              icon: Icon(state.sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
-              tooltip: state.sortAscending ? 'Croissant' : 'Décroissant',
-              onPressed: () => ref.read(suggestionsProvider.notifier).setSortBy(state.sortBy),
-            ),
-            // Clear filters
-            if (_hasActiveFilters(suggestionsAsync))
-              TextButton.icon(
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Réinitialiser'),
-                onPressed: () => ref.read(suggestionsProvider.notifier).clearFilters(),
-              ),
-          ],
-        ),
-      ),
-    ) ?? const SizedBox.shrink();
+          data: (state) =>
+              state.statusFilter != 'all' ||
+              state.typeFilter != 'all' ||
+              state.classFilter != 'all' ||
+              state.dateFrom != null ||
+              state.dateTo != null,
+        ) ??
+        false;
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, SuggestionsState state) {
+  Widget _buildFilterBar(
+    BuildContext context,
+    AsyncValue<SuggestionsState> suggestionsAsync,
+  ) {
+    return suggestionsAsync.whenOrNull(
+          data: (state) => Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+            ),
+            child: Wrap(
+              spacing: 16,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                // Status filter
+                DropdownButton<String>(
+                  value: state.statusFilter,
+                  hint: const Text('Statut'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text('Tous les statuts'),
+                    ),
+                    DropdownMenuItem(value: 'unread', child: Text('Non lus')),
+                    DropdownMenuItem(value: 'read', child: Text('Lus')),
+                    DropdownMenuItem(value: 'sent', child: Text('Envoyé')),
+                    DropdownMenuItem(value: 'replied', child: Text('Répondu')),
+                  ],
+                  onChanged: (v) => ref
+                      .read(suggestionsProvider.notifier)
+                      .setStatusFilter(v!),
+                ),
+                // Type filter
+                DropdownButton<String>(
+                  value: state.typeFilter,
+                  hint: const Text('Type'),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text('Tous les types'),
+                    ),
+                    DropdownMenuItem(value: 'general', child: Text('Général')),
+                    DropdownMenuItem(
+                      value: 'reclamation_note',
+                      child: Text('Réclamation note'),
+                    ),
+                    DropdownMenuItem(value: 'absence', child: Text('Absence')),
+                    DropdownMenuItem(
+                      value: 'emploi_temps',
+                      child: Text('Emploi du temps'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'inscription',
+                      child: Text('Inscription'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'paiement',
+                      child: Text('Paiement'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'stage',
+                      child: Text('Stage / PFE'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'orientation',
+                      child: Text('Orientation'),
+                    ),
+                    DropdownMenuItem(value: 'bourse', child: Text('Bourse')),
+                    DropdownMenuItem(
+                      value: 'transport',
+                      child: Text('Transport'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'restauration',
+                      child: Text('Restauration'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'bibliotheque',
+                      child: Text('Bibliothèque'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'vie_universitaire',
+                      child: Text('Vie universitaire'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'infrastructure',
+                      child: Text('Infrastructure'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'securite',
+                      child: Text('Sécurité'),
+                    ),
+                    DropdownMenuItem(value: 'autre', child: Text('Autre')),
+                  ],
+                  onChanged: (v) =>
+                      ref.read(suggestionsProvider.notifier).setTypeFilter(v!),
+                ),
+                // Class filter
+                if (state.uniqueClasses.isNotEmpty)
+                  DropdownButton<String>(
+                    value: state.classFilter,
+                    hint: const Text('Classe'),
+                    items: [
+                      const DropdownMenuItem(
+                        value: 'all',
+                        child: Text('Toutes les classes'),
+                      ),
+                      ...state.uniqueClasses.map(
+                        (classId) => DropdownMenuItem(
+                          value: classId,
+                          child: Text(state.classNames[classId] ?? classId),
+                        ),
+                      ),
+                    ],
+                    onChanged: (v) => ref
+                        .read(suggestionsProvider.notifier)
+                        .setClassFilter(v!),
+                  ),
+                // Date range
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(
+                    state.dateFrom != null
+                        ? '${DateFormat('dd/MM').format(state.dateFrom!)} - ${state.dateTo != null ? DateFormat('dd/MM').format(state.dateTo!) : '...'}'
+                        : 'Période',
+                  ),
+                  onPressed: () async {
+                    final range = await showDateRangePicker(
+                      context: context,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now().add(const Duration(days: 1)),
+                      initialDateRange:
+                          state.dateFrom != null && state.dateTo != null
+                          ? DateTimeRange(
+                              start: state.dateFrom!,
+                              end: state.dateTo!,
+                            )
+                          : null,
+                    );
+                    if (range != null) {
+                      ref
+                          .read(suggestionsProvider.notifier)
+                          .setDateRange(range.start, range.end);
+                    }
+                  },
+                ),
+                // Sort dropdown
+                DropdownButton<String>(
+                  value: state.sortBy,
+                  hint: const Text('Trier par'),
+                  items: const [
+                    DropdownMenuItem(value: 'date', child: Text('Date')),
+                    DropdownMenuItem(value: 'class', child: Text('Classe')),
+                    DropdownMenuItem(value: 'type', child: Text('Type')),
+                    DropdownMenuItem(value: 'status', child: Text('Statut')),
+                  ],
+                  onChanged: (v) =>
+                      ref.read(suggestionsProvider.notifier).setSortBy(v!),
+                ),
+                IconButton(
+                  icon: Icon(
+                    state.sortAscending
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward,
+                  ),
+                  tooltip: state.sortAscending ? 'Croissant' : 'Décroissant',
+                  onPressed: () => ref
+                      .read(suggestionsProvider.notifier)
+                      .setSortBy(state.sortBy),
+                ),
+                // Clear filters
+                if (_hasActiveFilters(suggestionsAsync))
+                  TextButton.icon(
+                    icon: const Icon(Icons.clear_all),
+                    label: const Text('Réinitialiser'),
+                    onPressed: () =>
+                        ref.read(suggestionsProvider.notifier).clearFilters(),
+                  ),
+              ],
+            ),
+          ),
+        ) ??
+        const SizedBox.shrink();
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    SuggestionsState state,
+  ) {
     final searchQuery = state.searchQuery;
     return Padding(
       padding: const EdgeInsets.all(24),
@@ -502,26 +752,45 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+            ),
+          ],
         ),
         child: state.filtered.isEmpty
-            ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.inbox, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text('Aucune suggestion', style: TextStyle(color: Colors.grey[600])),
-                if (state.suggestions.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text('Essayez de modifier les filtres', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                  ),
-              ]))
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.inbox, size: 64, color: Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Aucune suggestion',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    if (state.suggestions.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          'Essayez de modifier les filtres',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              )
             : ListView.builder(
                 padding: const EdgeInsets.all(16),
                 itemCount: state.filtered.length,
                 itemBuilder: (context, index) {
                   final s = state.filtered[index];
                   return _SuggestionCard(
-                    suggestion: s, 
+                    suggestion: s,
                     searchQuery: searchQuery,
                     isSelected: _selectedIds.contains(s.id),
                     selectionMode: _selectionMode,
@@ -533,7 +802,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
       ),
     );
   }
-  
+
   void _handleAction(String action, Suggestion s) {
     switch (action) {
       case 'reply':
@@ -555,30 +824,39 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => UserDetailScreen(userId: s.studentId, userName: s.studentName),
+            builder: (context) =>
+                UserDetailScreen(userId: s.studentId, userName: s.studentName),
           ),
         );
         break;
     }
   }
-  
+
   Future<void> _confirmDelete(Suggestion s) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Confirmer la suppression'),
-        content: Text('Voulez-vous vraiment supprimer la suggestion "${s.subject}" ?'),
+        content: Text(
+          'Voulez-vous vraiment supprimer la suggestion "${s.subject}" ?',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
     );
-    
+
     if (confirm == true) {
       await ref.read(suggestionsProvider.notifier).delete(s.id);
     }
@@ -609,15 +887,25 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                   children: [
                     Row(
                       children: [
-                        Text(s.studentName ?? 'Anonyme', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(
+                          s.studentName ?? 'Anonyme',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         if (s.className != null) ...[
                           const Text(' • '),
-                          Text(s.className!, style: TextStyle(color: Colors.grey[600])),
+                          Text(
+                            s.className!,
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(s.content, maxLines: 3, overflow: TextOverflow.ellipsis),
+                    Text(
+                      s.content,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -634,11 +922,16 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (controller.text.isEmpty) return;
-              ref.read(suggestionsProvider.notifier).reply(s.id, controller.text);
+              ref
+                  .read(suggestionsProvider.notifier)
+                  .reply(s.id, controller.text);
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
@@ -648,7 +941,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
       ),
     );
   }
-  
+
   void _showDetailDialog(BuildContext context, Suggestion s) {
     showDialog(
       context: context,
@@ -656,7 +949,9 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
           width: 700,
-          constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -665,7 +960,9 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -673,7 +970,13 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s.subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          Text(
+                            s.subject,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
@@ -681,7 +984,12 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                               const SizedBox(width: 8),
                               _StatusChip(status: s.status),
                               const Spacer(),
-                              Text(DateFormat('dd/MM/yyyy à HH:mm').format(s.createdAt), style: TextStyle(color: Colors.grey[600])),
+                              Text(
+                                DateFormat(
+                                  'dd/MM/yyyy à HH:mm',
+                                ).format(s.createdAt),
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
                             ],
                           ),
                         ],
@@ -715,8 +1023,13 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                               radius: 24,
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
-                                s.studentName?.substring(0, 1).toUpperCase() ?? 'A',
-                                style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold, fontSize: 18),
+                                s.studentName?.substring(0, 1).toUpperCase() ??
+                                    'A',
+                                style: TextStyle(
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -724,20 +1037,46 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(s.studentName ?? 'Étudiant', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  Text(
+                                    s.studentName ?? 'Étudiant',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
                                   const SizedBox(height: 4),
                                   Row(
                                     children: [
-                                      if (s.studentCode != null && s.studentCode!.isNotEmpty) ...[
-                                        Icon(Icons.badge, size: 16, color: Colors.grey.shade600),
+                                      if (s.studentCode != null &&
+                                          s.studentCode!.isNotEmpty) ...[
+                                        Icon(
+                                          Icons.badge,
+                                          size: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
                                         const SizedBox(width: 4),
-                                        Text(s.studentCode!, style: TextStyle(color: Colors.grey.shade700)),
+                                        Text(
+                                          s.studentCode!,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
                                         const SizedBox(width: 16),
                                       ],
-                                      if (s.className != null && s.className!.isNotEmpty) ...[
-                                        Icon(Icons.school, size: 16, color: Colors.grey.shade600),
+                                      if (s.className != null &&
+                                          s.className!.isNotEmpty) ...[
+                                        Icon(
+                                          Icons.school,
+                                          size: 16,
+                                          color: Colors.grey.shade600,
+                                        ),
                                         const SizedBox(width: 4),
-                                        Text(s.className!, style: TextStyle(color: Colors.grey.shade700)),
+                                        Text(
+                                          s.className!,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
                                       ],
                                     ],
                                   ),
@@ -752,7 +1091,10 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => UserDetailScreen(userId: s.studentId, userName: s.studentName),
+                                    builder: (context) => UserDetailScreen(
+                                      userId: s.studentId,
+                                      userName: s.studentName,
+                                    ),
                                   ),
                                 );
                               },
@@ -762,7 +1104,13 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                       ),
                       const SizedBox(height: 20),
                       // Message content
-                      const Text('Message:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text(
+                        'Message:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Container(
                         width: double.infinity,
@@ -780,7 +1128,13 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                       // Attachments with image preview
                       if (s.attachments.isNotEmpty) ...[
                         const SizedBox(height: 20),
-                        Text('Pièces jointes (${s.attachments.length}):', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          'Pièces jointes (${s.attachments.length}):',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         const SizedBox(height: 12),
                         _AttachmentsGrid(attachments: s.attachments),
                       ],
@@ -793,14 +1147,22 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    bottom: Radius.circular(16),
+                  ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton.icon(
-                      icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
-                      label: Text('Supprimer', style: TextStyle(color: Colors.red.shade400)),
+                      icon: Icon(
+                        Icons.delete_outline,
+                        color: Colors.red.shade400,
+                      ),
+                      label: Text(
+                        'Supprimer',
+                        style: TextStyle(color: Colors.red.shade400),
+                      ),
                       onPressed: () {
                         Navigator.pop(ctx);
                         _confirmDelete(s);
@@ -812,7 +1174,9 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                         icon: const Icon(Icons.mark_email_read),
                         label: const Text('Marquer lu'),
                         onPressed: () {
-                          ref.read(suggestionsProvider.notifier).markAsRead(s.id);
+                          ref
+                              .read(suggestionsProvider.notifier)
+                              .markAsRead(s.id);
                           Navigator.pop(ctx);
                         },
                       ),
@@ -824,7 +1188,10 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                         Navigator.pop(ctx);
                         _showReplyDialog(context, ref, s);
                       },
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -844,10 +1211,10 @@ class _SuggestionCard extends StatelessWidget {
   final bool selectionMode;
   final VoidCallback onSelect;
   final Function(String) onAction;
-  
+
   const _SuggestionCard({
-    required this.suggestion, 
-    required this.searchQuery, 
+    required this.suggestion,
+    required this.searchQuery,
     required this.isSelected,
     required this.selectionMode,
     required this.onSelect,
@@ -859,10 +1226,14 @@ class _SuggestionCard extends StatelessWidget {
     final s = suggestion;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: isSelected ? Colors.blue.shade100 : (s.isRead ? null : Colors.blue.shade50),
+      color: isSelected
+          ? Colors.blue.shade100
+          : (s.isRead ? null : Colors.blue.shade50),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: isSelected ? BorderSide(color: Colors.blue.shade400, width: 2) : BorderSide.none,
+        side: isSelected
+            ? BorderSide(color: Colors.blue.shade400, width: 2)
+            : BorderSide.none,
       ),
       child: InkWell(
         onTap: selectionMode ? onSelect : () => onAction('view'),
@@ -895,7 +1266,15 @@ class _SuggestionCard extends StatelessWidget {
                       ),
                     ),
                   Expanded(
-                    child: _highlightText(s.subject, searchQuery, const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1),
+                    child: _highlightText(
+                      s.subject,
+                      searchQuery,
+                      const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                      maxLines: 1,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   _TypeBadge(type: s.suggestionType),
@@ -922,7 +1301,10 @@ class _SuggestionCard extends StatelessWidget {
                         backgroundColor: Colors.blue.shade100,
                         child: Text(
                           s.studentName?.substring(0, 1).toUpperCase() ?? 'A',
-                          style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -932,26 +1314,65 @@ class _SuggestionCard extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Expanded(child: _highlightText(s.studentName ?? 'Étudiant', searchQuery, const TextStyle(fontWeight: FontWeight.bold), maxLines: 1)),
+                                Expanded(
+                                  child: _highlightText(
+                                    s.studentName ?? 'Étudiant',
+                                    searchQuery,
+                                    const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                ),
                                 if (!selectionMode) ...[
                                   const SizedBox(width: 8),
-                                  Icon(Icons.open_in_new, size: 14, color: Colors.blue.shade400),
+                                  Icon(
+                                    Icons.open_in_new,
+                                    size: 14,
+                                    color: Colors.blue.shade400,
+                                  ),
                                 ],
                               ],
                             ),
                             const SizedBox(height: 2),
                             Row(
                               children: [
-                                if (s.studentCode != null && s.studentCode!.isNotEmpty) ...[
-                                  Icon(Icons.badge, size: 14, color: Colors.grey.shade600),
+                                if (s.studentCode != null &&
+                                    s.studentCode!.isNotEmpty) ...[
+                                  Icon(
+                                    Icons.badge,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
                                   const SizedBox(width: 4),
-                                  _highlightText(s.studentCode!, searchQuery, TextStyle(color: Colors.grey.shade700, fontSize: 12), maxLines: 1),
+                                  _highlightText(
+                                    s.studentCode!,
+                                    searchQuery,
+                                    TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                  ),
                                   const SizedBox(width: 12),
                                 ],
-                                if (s.className != null && s.className!.isNotEmpty) ...[
-                                  Icon(Icons.school, size: 14, color: Colors.grey.shade600),
+                                if (s.className != null &&
+                                    s.className!.isNotEmpty) ...[
+                                  Icon(
+                                    Icons.school,
+                                    size: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
                                   const SizedBox(width: 4),
-                                  _highlightText(s.className!, searchQuery, TextStyle(color: Colors.grey.shade700, fontSize: 12), maxLines: 1),
+                                  _highlightText(
+                                    s.className!,
+                                    searchQuery,
+                                    TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 12,
+                                    ),
+                                    maxLines: 1,
+                                  ),
                                 ],
                               ],
                             ),
@@ -962,8 +1383,20 @@ class _SuggestionCard extends StatelessWidget {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(DateFormat('dd/MM/yyyy').format(s.createdAt), style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                          Text(DateFormat('HH:mm').format(s.createdAt), style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
+                          Text(
+                            DateFormat('dd/MM/yyyy').format(s.createdAt),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            DateFormat('HH:mm').format(s.createdAt),
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -980,7 +1413,12 @@ class _SuggestionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: _highlightText(s.content.isNotEmpty ? s.content : '(Aucun contenu)', searchQuery, TextStyle(color: Colors.grey.shade800), maxLines: 3),
+                child: _highlightText(
+                  s.content.isNotEmpty ? s.content : '(Aucun contenu)',
+                  searchQuery,
+                  TextStyle(color: Colors.grey.shade800),
+                  maxLines: 3,
+                ),
               ),
               // Attachments preview (show thumbnails for images)
               if (s.attachments.isNotEmpty) ...[
@@ -994,8 +1432,15 @@ class _SuggestionCard extends StatelessWidget {
                   const Spacer(),
                   // Delete button
                   TextButton.icon(
-                    icon: Icon(Icons.delete_outline, size: 16, color: Colors.red.shade400),
-                    label: Text('Supprimer', style: TextStyle(color: Colors.red.shade400)),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: Colors.red.shade400,
+                    ),
+                    label: Text(
+                      'Supprimer',
+                      style: TextStyle(color: Colors.red.shade400),
+                    ),
                     onPressed: () => onAction('delete'),
                   ),
                   const SizedBox(width: 8),
@@ -1040,16 +1485,36 @@ class _StatusChip extends StatelessWidget {
     Color bg;
     String label;
     switch (status) {
-      case 'pending': bg = Colors.orange; label = 'En attente'; break;
-      case 'in_review': bg = Colors.blue; label = 'En cours'; break;
-      case 'replied': bg = Colors.green; label = 'Répondu'; break;
-      case 'closed': bg = Colors.grey; label = 'Fermé'; break;
-      default: bg = Colors.grey; label = status;
+      case 'pending':
+        bg = Colors.orange;
+        label = 'En attente';
+        break;
+      case 'in_review':
+        bg = Colors.blue;
+        label = 'En cours';
+        break;
+      case 'replied':
+        bg = Colors.green;
+        label = 'Répondu';
+        break;
+      case 'closed':
+        bg = Colors.grey;
+        label = 'Fermé';
+        break;
+      default:
+        bg = Colors.grey;
+        label = status;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: bg.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
-      child: Text(label, style: TextStyle(color: bg, fontSize: 12, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: bg.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: bg, fontSize: 12, fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -1063,13 +1528,65 @@ class _TypeBadge extends StatelessWidget {
     Color bg;
     String label;
     switch (type) {
-      case 'reclamation_note': bg = Colors.red; label = 'Note'; break;
-      case 'absence': bg = Colors.purple; label = 'Absence'; break;
-      case 'paiement': bg = Colors.indigo; label = 'Paiement'; break;
-      case 'emploi_temps': bg = Colors.teal; label = 'EDT'; break;
-      case 'vie_scolaire': bg = Colors.pink; label = 'Vie scol.'; break;
-      case 'autre': bg = Colors.grey; label = 'Autre'; break;
-      default: bg = Colors.blue; label = 'Général';
+      case 'reclamation_note':
+        bg = const Color(0xFFEF4444);
+        label = 'Note';
+        break;
+      case 'absence':
+        bg = const Color(0xFFF59E0B);
+        label = 'Absence';
+        break;
+      case 'emploi_temps':
+        bg = const Color(0xFF3B82F6);
+        label = 'EDT';
+        break;
+      case 'inscription':
+        bg = const Color(0xFF8B5CF6);
+        label = 'Inscription';
+        break;
+      case 'paiement':
+        bg = const Color(0xFF10B981);
+        label = 'Paiement';
+        break;
+      case 'orientation':
+        bg = const Color(0xFFEC4899);
+        label = 'Orientation';
+        break;
+      case 'bourse':
+        bg = const Color(0xFF14B8A6);
+        label = 'Bourse';
+        break;
+      case 'transport':
+        bg = const Color(0xFF78716C);
+        label = 'Transport';
+        break;
+      case 'restauration':
+        bg = const Color(0xFFEAB308);
+        label = 'Resto';
+        break;
+      case 'bibliotheque':
+        bg = const Color(0xFF0EA5E9);
+        label = 'Biblio';
+        break;
+      case 'vie_universitaire':
+        bg = const Color(0xFFA855F7);
+        label = 'Vie univ.';
+        break;
+      case 'infrastructure':
+        bg = const Color(0xFF64748B);
+        label = 'Infra.';
+        break;
+      case 'securite':
+        bg = const Color(0xFFDC2626);
+        label = 'Sécurité';
+        break;
+      case 'autre':
+        bg = const Color(0xFF6B7280);
+        label = 'Autre';
+        break;
+      default:
+        bg = const Color(0xFF9CA3AF);
+        label = 'Général';
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -1078,7 +1595,10 @@ class _TypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         border: Border.all(color: bg.withValues(alpha: 0.3)),
       ),
-      child: Text(label, style: TextStyle(color: bg, fontSize: 10, fontWeight: FontWeight.bold)),
+      child: Text(
+        label,
+        style: TextStyle(color: bg, fontSize: 10, fontWeight: FontWeight.bold),
+      ),
     );
   }
 }
@@ -1090,7 +1610,10 @@ class _AttachmentChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ActionChip(
-      avatar: Icon(attachment.isImage ? Icons.image : Icons.insert_drive_file, size: 16),
+      avatar: Icon(
+        attachment.isImage ? Icons.image : Icons.insert_drive_file,
+        size: 16,
+      ),
       label: Text(attachment.fileName, style: const TextStyle(fontSize: 12)),
       onPressed: () async {
         final uri = Uri.parse(attachment.fileUrl);
@@ -1111,7 +1634,7 @@ class _AttachmentsPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final images = attachments.where((a) => a.isImage).toList();
     final files = attachments.where((a) => !a.isImage).toList();
-    
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1128,7 +1651,11 @@ class _AttachmentsPreview extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '${attachments.length} pièce(s) jointe(s)',
-                style: TextStyle(color: Colors.amber.shade700, fontWeight: FontWeight.bold, fontSize: 12),
+                style: TextStyle(
+                  color: Colors.amber.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
@@ -1169,19 +1696,26 @@ class _AttachmentsPreview extends StatelessWidget {
             Wrap(
               spacing: 6,
               runSpacing: 6,
-              children: files.map((f) => Chip(
-                avatar: const Icon(Icons.insert_drive_file, size: 14),
-                label: Text(f.fileName, style: const TextStyle(fontSize: 11)),
-                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                visualDensity: VisualDensity.compact,
-              )).toList(),
+              children: files
+                  .map(
+                    (f) => Chip(
+                      avatar: const Icon(Icons.insert_drive_file, size: 14),
+                      label: Text(
+                        f.fileName,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  )
+                  .toList(),
             ),
           ],
         ],
       ),
     );
   }
-  
+
   void _showImageDialog(BuildContext context, SuggestionAttachment img) {
     showDialog(
       context: context,
@@ -1213,7 +1747,8 @@ class _AttachmentsPreview extends StatelessWidget {
                 child: Image.network(
                   img.fileUrl,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image, size: 64)),
+                  errorBuilder: (_, __, ___) =>
+                      const Center(child: Icon(Icons.broken_image, size: 64)),
                 ),
               ),
             ),
@@ -1233,7 +1768,7 @@ class _AttachmentsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final images = attachments.where((a) => a.isImage).toList();
     final files = attachments.where((a) => !a.isImage).toList();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1242,38 +1777,44 @@ class _AttachmentsGrid extends StatelessWidget {
           Wrap(
             spacing: 12,
             runSpacing: 12,
-            children: images.map((img) => _ImageThumbnail(attachment: img)).toList(),
+            children: images
+                .map((img) => _ImageThumbnail(attachment: img))
+                .toList(),
           ),
           if (files.isNotEmpty) const SizedBox(height: 16),
         ],
         // File list
         if (files.isNotEmpty)
-          ...files.map((f) => ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
+          ...files.map(
+            (f) => ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.insert_drive_file, color: Colors.grey),
               ),
-              child: const Icon(Icons.insert_drive_file, color: Colors.grey),
+              title: Text(f.fileName),
+              subtitle: f.fileSize != null
+                  ? Text(_formatFileSize(f.fileSize!))
+                  : null,
+              trailing: IconButton(
+                icon: const Icon(Icons.download),
+                onPressed: () async {
+                  final uri = Uri.parse(f.fileUrl);
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri);
+                  }
+                },
+              ),
+              contentPadding: EdgeInsets.zero,
             ),
-            title: Text(f.fileName),
-            subtitle: f.fileSize != null ? Text(_formatFileSize(f.fileSize!)) : null,
-            trailing: IconButton(
-              icon: const Icon(Icons.download),
-              onPressed: () async {
-                final uri = Uri.parse(f.fileUrl);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri);
-                }
-              },
-            ),
-            contentPadding: EdgeInsets.zero,
-          )),
+          ),
       ],
     );
   }
-  
+
   String _formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
@@ -1314,12 +1855,18 @@ class _ImageThumbnail extends StatelessWidget {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                      ],
                     ),
                   ),
                   child: Text(
@@ -1339,7 +1886,11 @@ class _ImageThumbnail extends StatelessWidget {
                     color: Colors.black.withOpacity(0.5),
                     borderRadius: BorderRadius.circular(4),
                   ),
-                  child: const Icon(Icons.zoom_in, color: Colors.white, size: 16),
+                  child: const Icon(
+                    Icons.zoom_in,
+                    color: Colors.white,
+                    size: 16,
+                  ),
                 ),
               ),
             ],
@@ -1348,7 +1899,7 @@ class _ImageThumbnail extends StatelessWidget {
       ),
     );
   }
-  
+
   void _showFullImage(BuildContext context) {
     showDialog(
       context: context,

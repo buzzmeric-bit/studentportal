@@ -1,5 +1,4 @@
-﻿import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+﻿import 'package:go_router/go_router.dart';
 import '../../presentation/screens/login_screen.dart';
 import '../../presentation/screens/dashboard/dashboard_screen.dart';
 import '../../presentation/screens/users/users_screen.dart';

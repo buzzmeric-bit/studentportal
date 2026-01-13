@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import '../../../../models/announcement_model.dart';
 import '../../../../repositories/announcement_repository.dart';

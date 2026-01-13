@@ -222,6 +222,7 @@ class AnnouncementsNotifier extends AsyncNotifier<AnnouncementsState> {
     required String fileName,
     required Uint8List fileBytes,
     required String mimeType,
+    String? displayName, // Custom display name for non-images
   }) async {
     final supabase = SupabaseConfig.client;
     final user = supabase.auth.currentUser;
@@ -252,14 +253,21 @@ class AnnouncementsNotifier extends AsyncNotifier<AnnouncementsState> {
 
     try {
       // Record in database
-      await supabase.from('announcement_attachments').insert({
+      final insertData = {
         'announcement_id': announcementId,
         'scope': scope,
         'file_name': fileName,
         'file_url': publicUrl,
         'file_type': mimeType,
         'file_size': fileBytes.length,
-      });
+      };
+      
+      // Add display_name if provided and different from fileName
+      if (displayName != null && displayName.isNotEmpty && displayName != fileName) {
+        insertData['display_name'] = displayName;
+      }
+      
+      await supabase.from('announcement_attachments').insert(insertData);
     } catch (e) {
       throw Exception('Erreur insert attachment: $e');
     }

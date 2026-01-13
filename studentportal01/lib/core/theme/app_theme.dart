@@ -55,6 +55,7 @@ class AppColors {
   static const Color tileCourses = Color(0xFF6366F1);       // Indigo - Modern indigo
   static const Color tileMonSolde = Color(0xFF06B6D4);      // Cyan - Bright cyan
   static const Color tileDocuments = Color(0xFFEC4899);     // Pink - Vibrant pink
+  static const Color tileMonGroupe = Color(0xFF6366F1);     // Indigo - Group purple
 }
 
 class AppSizes {

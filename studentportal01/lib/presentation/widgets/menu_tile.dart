@@ -2,7 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_theme.dart';
-import '../screens/home/home_screen.dart';
+
+/// Data class for menu tile
+class MenuTileData {
+  final IconData icon;
+  final String title;
+  final Color color;
+  final String route;
+  final String? helperText;
+  final int badgeCount;
+  final Color? badgeColor;
+  final bool hasIndicator;
+
+  const MenuTileData({
+    required this.icon,
+    required this.title,
+    required this.color,
+    required this.route,
+    this.helperText,
+    this.badgeCount = 0,
+    this.badgeColor,
+    this.hasIndicator = false,
+  });
+}
 
 class MenuTile extends StatelessWidget {
   final MenuTileData data;
@@ -97,7 +119,7 @@ class MenuTile extends StatelessWidget {
                 ],
               ),
               // Badge (if provided)
-              if (data.badgeCount != null && data.badgeCount! > 0)
+              if (data.badgeCount > 0)
                 Positioned(
                   top: AppSizes.paddingS,
                   right: AppSizes.paddingS,
@@ -130,7 +152,7 @@ class MenuTile extends StatelessWidget {
                       ],
                     ),
                     child: Text(
-                      data.badgeCount! > 99 ? '99+' : '${data.badgeCount}',
+                      data.badgeCount > 99 ? '99+' : '${data.badgeCount}',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: AppSizes.badgeFontSize,

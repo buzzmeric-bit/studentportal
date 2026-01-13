@@ -62,7 +62,7 @@ class StudentNoteInfoPreviewCard extends StatelessWidget {
               children: [
                 const Icon(Icons.campaign, size: 12, color: Color(0xFFE91E63)),
                 const SizedBox(width: 4),
-                const Text('Note d\'info', style: TextStyle(fontSize: 10, color: Color(0xFFE91E63), fontWeight: FontWeight.w500)),
+                const Text('Notification', style: TextStyle(fontSize: 10, color: Color(0xFFE91E63), fontWeight: FontWeight.w500)),
               ],
             ),
           ),

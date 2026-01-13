@@ -184,7 +184,7 @@ class CourseRepository {
       }
 
       final response = await count.count();
-      return response.count ?? 0;
+      return response.count;
     } catch (e) {
       return 0;
     }

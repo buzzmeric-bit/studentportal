@@ -1,4 +1,6 @@
-﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿// ignore_for_file: unused_local_variable
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/supabase_config.dart';
 
 class TimetableSlot {

@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/suggestions_provider.dart';
 import '../../widgets/glass_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -24,70 +24,100 @@ class HomeScreen extends ConsumerWidget {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final screenHeight = constraints.maxHeight;
-          final headerHeight = screenHeight * 0.38;
-          
+          final headerHeight = screenHeight * 0.42;
+
           return Stack(
             children: [
-              // Purple gradient background - full screen
+              // Glassmorphism gradient background - frosted iOS style
               Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFFB794F6),
-                      Color(0xFF9B87F5),
-                      Color(0xFF7C9AF5),
-                      Color(0xFF6BBAFF),
+                      Color(0xFFE8D5F2), // Lavender / lilac
+                      Color(0xFFD4C4E8), // Soft lilac
+                      Color(0xFFC9D6F0), // Light periwinkle
+                      Color(0xFFE0EAF5), // Icy blue-white
+                      Color(0xFFF0F5FA), // Cool icy white
                     ],
+                    stops: [0.0, 0.25, 0.5, 0.75, 1.0],
                   ),
                 ),
               ),
-              // Scrollable content
-              SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Column(
-                  children: [
-                    // Hero Header Section - fixed height
-                    SizedBox(
-                      height: headerHeight,
-                      child: SafeArea(
-                        bottom: false,
-                        child: _buildHeader(context, user, enrollment),
-                      ),
-                    ),
-                    
-                    // White content area with rounded top
-                    Container(
-                      width: double.infinity,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(40),
-                          topRight: Radius.circular(40),
+              // Scrollable content - hide scrollbar
+              ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(scrollbars: false),
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: screenHeight),
+                    child: Column(
+                      children: [
+                        // Hero Header Section - fixed height
+                        SizedBox(
+                          height: headerHeight,
+                          child: SafeArea(
+                            bottom: false,
+                            child: _buildHeader(context, user, enrollment),
+                          ),
                         ),
-                      ),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 32),
-                          // Grid Section
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 24),
-                            child: GridView.count(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              crossAxisCount: 2,
-                              mainAxisSpacing: 14,
-                              crossAxisSpacing: 14,
-                              childAspectRatio: 0.90,
-                              children: _buildGridCards(context, l10n),
+
+                        // Frosted glass content area with rounded top
+                        ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(40),
+                            topRight: Radius.circular(40),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(40),
+                                  topRight: Radius.circular(40),
+                                ),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.1),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 32),
+                                  // Grid Section
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                    ),
+                                    child: GridView.count(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      crossAxisCount: 2,
+                                      mainAxisSpacing: 14,
+                                      crossAxisSpacing: 14,
+                                      childAspectRatio: 0.90,
+                                      children: _buildGridCards(
+                                        context,
+                                        l10n,
+                                        ref,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 110), // Nav bar space
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 110), // Nav bar space
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],
@@ -101,7 +131,7 @@ class HomeScreen extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Top row: Menu and Profile
@@ -193,8 +223,10 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
-          
-          // Text content - centered vertically in remaining space
+
+          const SizedBox(height: 16),
+
+          // Text content
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -209,58 +241,93 @@ class HomeScreen extends ConsumerWidget {
                   letterSpacing: 0.5,
                 ),
               ),
-              
-              const SizedBox(height: 8),
-              
-              // HUGE name
-              Text(
-                user?.fullName ?? 'Ahmed Benali',
-                style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: -1.5,
-                  height: 1.05,
-                ),
+
+              const SizedBox(height: 4),
+
+              // First name
+              Builder(
+                builder: (context) {
+                  final fullName = user?.fullName ?? 'Ahmed Benali';
+                  final nameParts = fullName.split(' ');
+                  final firstName = nameParts.isNotEmpty
+                      ? nameParts.first
+                      : fullName;
+                  final lastName = nameParts.length > 1
+                      ? nameParts.sublist(1).join(' ')
+                      : '';
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          firstName,
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: -1.5,
+                            height: 1.05,
+                          ),
+                        ),
+                      ),
+                      if (lastName.isNotEmpty)
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            lastName,
+                            style: const TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: -1.5,
+                              height: 1.05,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
-              
-              const SizedBox(height: 28),
-              
-              // Floating chip
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.4),
-                    width: 1.5,
-                  ),
-                ),
-                child: Text(
-                  enrollment != null
-                      ? '${enrollment.classInfo?.name ?? '1ère Année Licence'}'
+
+              const SizedBox(height: 8),
+
+              // Class and group info - plain text under the name
+              Text(
+                enrollment != null
+                    ? '${enrollment.classInfo?.name ?? '1ère Année Licence'}'
                           '${enrollment.groupInfo != null ? ' • Groupe ${enrollment.groupInfo!.name}' : ' • Groupe A'}'
-                      : '1ère Année Licence • Groupe A',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3,
-                  ),
+                    : '1ère Année Licence • Groupe A',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withOpacity(0.85),
+                  letterSpacing: 0.3,
                 ),
               ),
             ],
           ),
-          
+
           // Bottom spacer
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
       ),
     );
   }
 
-  List<Widget> _buildGridCards(BuildContext context, AppLocalizations l10n) {
+  List<Widget> _buildGridCards(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
+    // Get count of suggestions that have been replied or marked as seen
+    final suggestionBadgeCount = ref.watch(
+      repliedOrSeenSuggestionsCountProvider,
+    );
+
     final cards = [
       _CardData(
         icon: Icons.lightbulb_rounded,
@@ -269,7 +336,7 @@ class HomeScreen extends ConsumerWidget {
         route: '/suggestions',
         gradientColors: const [Color(0xFF8B5CF6), Color(0xFF6366F1)],
         iconAlignment: Alignment.topLeft,
-        badgeCount: 1,
+        badgeCount: suggestionBadgeCount,
       ),
       _CardData(
         icon: Icons.event_busy_rounded,
@@ -313,39 +380,40 @@ class HomeScreen extends ConsumerWidget {
       ),
     ];
 
-    return cards.map((card) => GlassCard(
-      icon: card.icon,
-      label: card.label,
-      subtitle: card.subtitle,
-      gradientColors: card.gradientColors,
-      iconAlignment: card.iconAlignment,
-      badgeCount: card.badgeCount,
-      onTap: () => context.push(card.route),
-    )).toList();
+    return cards
+        .map(
+          (card) => GlassCard(
+            icon: card.icon,
+            label: card.label,
+            subtitle: card.subtitle,
+            gradientColors: card.gradientColors,
+            iconAlignment: card.iconAlignment,
+            badgeCount: card.badgeCount,
+            onTap: () => context.go(card.route),
+          ),
+        )
+        .toList();
   }
 
-  Widget _buildDrawer(BuildContext context, AppLocalizations l10n, WidgetRef ref) {
+  Widget _buildDrawer(
+    BuildContext context,
+    AppLocalizations l10n,
+    WidgetRef ref,
+  ) {
     return Drawer(
       child: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFB794F6),
-              Color(0xFF9B87F5),
-            ],
+            colors: [Color(0xFFB794F6), Color(0xFF9B87F5)],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
               const SizedBox(height: 20),
-              const Icon(
-                Icons.school_rounded,
-                color: Colors.white,
-                size: 48,
-              ),
+              const Icon(Icons.school_rounded, color: Colors.white, size: 48),
               const SizedBox(height: 12),
               Text(
                 l10n.appName,
@@ -453,4 +521,3 @@ class _CardData {
     this.badgeCount,
   });
 }
-

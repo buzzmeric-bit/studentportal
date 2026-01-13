@@ -83,7 +83,7 @@ final userDetailProvider = FutureProvider.family<UserDetailData?, String>((ref, 
             .order('payment_date', ascending: false)
             .limit(5);
         
-        for (final p in payments ?? []) {
+        for (final p in payments) {
           if (p['status'] == 'paid') {
             totalPaid += (p['amount'] as num?)?.toDouble() ?? 0;
           } else {
