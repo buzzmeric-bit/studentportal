@@ -1,146 +1,282 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/app_localizations.dart';
 import '../../../data/models/grade_model.dart';
+import '../../../data/repositories/results_repository.dart';
+import '../../../data/services/core_data_service.dart';
+import '../../providers/student_context_provider.dart' as ctx;
+
+// Results repository provider
+final resultsRepositoryProvider = Provider<StudentResultsRepository>((ref) {
+  return StudentResultsRepository(Supabase.instance.client);
+});
+
+// Current enrollment provider
+final currentEnrollmentProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  final repo = ref.watch(resultsRepositoryProvider);
+  return repo.getCurrentEnrollment();
+});
+
+// Re-export the shared semesters provider for backward compatibility
+// This now uses the dynamic provider from student_context_provider
+final semestersProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final semesters = await ref.watch(ctx.semestersProvider.future);
+  // Convert SemesterInfo to Map<String, dynamic> for backward compatibility
+  return semesters.map<Map<String, dynamic>>((s) => <String, dynamic>{
+    'id': s.id,
+    'name': s.name,
+    'number': s.number,
+    'is_current': s.isCurrent,
+  }).toList();
+});
 
 // Selected semester provider
 final resultatsSemesterProvider = StateProvider<int>((ref) => 1);
 
-// Demo grades provider
-final gradesProvider = FutureProvider.family<List<SubjectGradesSummary>, int>((ref, semesterId) async {
-  await Future.delayed(const Duration(milliseconds: 500));
+// Grades provider - fetches real data
+final gradesProvider = FutureProvider.family<List<SubjectGradesSummary>, int>((ref, semesterNumber) async {
+  final enrollment = await ref.watch(currentEnrollmentProvider.future);
+  final semesters = await ref.watch(semestersProvider.future);
   
+  if (enrollment == null || semesters.isEmpty) {
+    // Return demo data if no enrollment found
+    return _getDemoGrades(semesterNumber);
+  }
+  
+  // Find the semester by number
+  final semester = semesters.firstWhere(
+    (s) => s['number'] == semesterNumber,
+    orElse: () => <String, dynamic>{},
+  );
+  
+  if (semester.isEmpty || semester['id'] == null) {
+    return _getDemoGrades(semesterNumber);
+  }
+  
+  final repo = ref.watch(resultsRepositoryProvider);
+  final grades = await repo.getStudentGrades(
+    enrollmentId: enrollment['id'],
+    semesterId: semester['id'],
+  );
+  
+  // If no grades found, return demo data
+  if (grades.isEmpty) {
+    return _getDemoGrades(semesterNumber);
+  }
+  
+  return grades;
+});
+
+// Demo grades for testing
+List<SubjectGradesSummary> _getDemoGrades(int semesterId) {
   if (semesterId == 1) {
     return [
       SubjectGradesSummary(
         subjectOfferingId: 's1',
-        subjectName: 'Marketing',
-        subjectCode: 'MKT101',
-        coefficient: 3.0,
-        weightsDisplay: 'CC: 40% | Examen: 60%',
+        subjectName: 'Mathématiques',
+        subjectCode: 'MATH',
+        coefficient: 4.0,
+        weightsDisplay: 'DC: 25% | DS: 75%',
         components: [
           ComponentGrade(
             componentId: 'c1',
-            componentName: 'Contrôle Continu',
-            weightPercent: 40,
+            componentName: 'Devoir de Contrôle 1',
+            weightPercent: 12.5,
             grade: 14.5,
             status: 'OK',
           ),
           ComponentGrade(
+            componentId: 'c1b',
+            componentName: 'Devoir de Contrôle 2',
+            weightPercent: 12.5,
+            grade: 15.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
             componentId: 'c2',
-            componentName: 'Examen Final',
-            weightPercent: 60,
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 75,
             grade: 12.0,
             status: 'OK',
           ),
         ],
-        average: 13.0,
+        average: 12.69,
       ),
       SubjectGradesSummary(
         subjectOfferingId: 's2',
-        subjectName: 'Comptabilité Générale',
-        subjectCode: 'CPT101',
+        subjectName: 'Physique',
+        subjectCode: 'PHYS',
         coefficient: 4.0,
-        weightsDisplay: 'CC: 30% | TP: 20% | Examen: 50%',
+        weightsDisplay: 'DC: 25% | TP: 25% | DS: 50%',
         components: [
           ComponentGrade(
             componentId: 'c3',
-            componentName: 'Contrôle Continu',
-            weightPercent: 30,
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
             grade: 15.0,
             status: 'OK',
           ),
           ComponentGrade(
             componentId: 'c4',
             componentName: 'Travaux Pratiques',
-            weightPercent: 20,
+            weightPercent: 25,
             grade: 16.5,
             status: 'OK',
           ),
           ComponentGrade(
             componentId: 'c5',
-            componentName: 'Examen Final',
+            componentName: 'Devoir de Synthèse',
             weightPercent: 50,
             grade: 11.0,
             status: 'OK',
           ),
         ],
-        average: 13.3,
+        average: 13.38,
       ),
       SubjectGradesSummary(
         subjectOfferingId: 's3',
-        subjectName: 'Droit des Affaires',
-        subjectCode: 'DRT101',
+        subjectName: 'Sciences de la Vie et de la Terre',
+        subjectCode: 'SVT',
         coefficient: 2.0,
-        weightsDisplay: 'CC: 40% | Examen: 60%',
+        weightsDisplay: 'DC: 25% | DS: 75%',
         components: [
           ComponentGrade(
             componentId: 'c6',
-            componentName: 'Contrôle Continu',
-            weightPercent: 40,
-            grade: 8.5,
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
+            grade: 13.5,
             status: 'OK',
           ),
           ComponentGrade(
             componentId: 'c7',
-            componentName: 'Examen Final',
-            weightPercent: 60,
-            grade: 9.0,
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 75,
+            grade: 14.0,
             status: 'OK',
           ),
         ],
-        average: 8.8,
+        average: 13.88,
       ),
       SubjectGradesSummary(
         subjectOfferingId: 's4',
-        subjectName: 'Informatique de Gestion',
-        subjectCode: 'INF101',
-        coefficient: 3.0,
-        weightsDisplay: 'CC: 30% | TP: 30% | Examen: 40%',
+        subjectName: 'Informatique',
+        subjectCode: 'INFO',
+        coefficient: 2.0,
+        weightsDisplay: 'DC: 25% | TP: 25% | DS: 50%',
         components: [
           ComponentGrade(
             componentId: 'c8',
-            componentName: 'Contrôle Continu',
-            weightPercent: 30,
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
             grade: 17.0,
             status: 'OK',
           ),
           ComponentGrade(
             componentId: 'c9',
             componentName: 'Travaux Pratiques',
-            weightPercent: 30,
+            weightPercent: 25,
             grade: 18.0,
             status: 'OK',
           ),
           ComponentGrade(
             componentId: 'c10',
-            componentName: 'Examen Final',
-            weightPercent: 40,
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 50,
             grade: 15.5,
             status: 'OK',
           ),
         ],
-        average: 16.7,
+        average: 16.5,
       ),
       SubjectGradesSummary(
         subjectOfferingId: 's5',
-        subjectName: 'Anglais Commercial',
-        subjectCode: 'ANG101',
+        subjectName: 'Langue Arabe',
+        subjectCode: 'AR',
         coefficient: 2.0,
-        weightsDisplay: 'CC: 50% | Examen: 50%',
+        weightsDisplay: 'DC: 25% | ORAL: 25% | DS: 50%',
         components: [
           ComponentGrade(
             componentId: 'c11',
-            componentName: 'Contrôle Continu',
-            weightPercent: 50,
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
             grade: 14.0,
             status: 'OK',
           ),
           ComponentGrade(
+            componentId: 'c11b',
+            componentName: 'Oral',
+            weightPercent: 25,
+            grade: 15.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
             componentId: 'c12',
-            componentName: 'Examen Final',
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 50,
+            grade: 12.0,
+            status: 'OK',
+          ),
+        ],
+        average: 13.25,
+      ),
+      SubjectGradesSummary(
+        subjectOfferingId: 's6',
+        subjectName: 'Langue Française',
+        subjectCode: 'FR',
+        coefficient: 2.0,
+        weightsDisplay: 'DC: 25% | ORAL: 25% | DS: 50%',
+        components: [
+          ComponentGrade(
+            componentId: 'c13',
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
+            grade: 11.5,
+            status: 'OK',
+          ),
+          ComponentGrade(
+            componentId: 'c13b',
+            componentName: 'Oral',
+            weightPercent: 25,
+            grade: 13.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
+            componentId: 'c14',
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 50,
+            grade: 10.5,
+            status: 'OK',
+          ),
+        ],
+        average: 11.38,
+      ),
+      SubjectGradesSummary(
+        subjectOfferingId: 's7',
+        subjectName: 'Langue Anglaise',
+        subjectCode: 'EN',
+        coefficient: 2.0,
+        weightsDisplay: 'DC: 25% | ORAL: 25% | DS: 50%',
+        components: [
+          ComponentGrade(
+            componentId: 'c15',
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 25,
+            grade: 16.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
+            componentId: 'c15b',
+            componentName: 'Oral',
+            weightPercent: 25,
+            grade: 17.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
+            componentId: 'c16',
+            componentName: 'Devoir de Synthèse',
             weightPercent: 50,
             grade: null,
             status: 'ND',
@@ -148,29 +284,108 @@ final gradesProvider = FutureProvider.family<List<SubjectGradesSummary>, int>((r
         ],
         average: null,
       ),
+      SubjectGradesSummary(
+        subjectOfferingId: 's8',
+        subjectName: 'Philosophie',
+        subjectCode: 'PHILO',
+        coefficient: 1.0,
+        weightsDisplay: 'DC: 33% | DS: 67%',
+        components: [
+          ComponentGrade(
+            componentId: 'c17',
+            componentName: 'Devoir de Contrôle',
+            weightPercent: 33,
+            grade: 12.0,
+            status: 'OK',
+          ),
+          ComponentGrade(
+            componentId: 'c18',
+            componentName: 'Devoir de Synthèse',
+            weightPercent: 67,
+            grade: 11.0,
+            status: 'OK',
+          ),
+        ],
+        average: 11.33,
+      ),
+      SubjectGradesSummary(
+        subjectOfferingId: 's9',
+        subjectName: 'Éducation Physique',
+        subjectCode: 'EPS',
+        coefficient: 1.0,
+        weightsDisplay: 'Évaluation: 100%',
+        components: [
+          ComponentGrade(
+            componentId: 'c19',
+            componentName: 'Évaluation Pratique',
+            weightPercent: 100,
+            grade: 15.0,
+            status: 'OK',
+          ),
+        ],
+        average: 15.0,
+      ),
     ];
   }
 
-  // Semester 2
+  // Semester 2 - partial data
   return [
     SubjectGradesSummary(
-      subjectOfferingId: 's6',
-      subjectName: 'Finance d\'Entreprise',
-      subjectCode: 'FIN201',
-      coefficient: 3.0,
-      weightsDisplay: 'CC: 40% | Examen: 60%',
+      subjectOfferingId: 's21',
+      subjectName: 'Mathématiques',
+      subjectCode: 'MATH',
+      coefficient: 4.0,
+      weightsDisplay: 'DC: 25% | DS: 75%',
       components: [
         ComponentGrade(
-          componentId: 'c13',
-          componentName: 'Contrôle Continu',
-          weightPercent: 40,
+          componentId: 'c21',
+          componentName: 'Devoir de Contrôle 1',
+          weightPercent: 12.5,
           grade: null,
           status: 'ND',
         ),
         ComponentGrade(
-          componentId: 'c14',
-          componentName: 'Examen Final',
-          weightPercent: 60,
+          componentId: 'c21b',
+          componentName: 'Devoir de Contrôle 2',
+          weightPercent: 12.5,
+          grade: null,
+          status: 'ND',
+        ),
+        ComponentGrade(
+          componentId: 'c22',
+          componentName: 'Devoir de Synthèse',
+          weightPercent: 75,
+          grade: null,
+          status: 'ND',
+        ),
+      ],
+      average: null,
+    ),
+    SubjectGradesSummary(
+      subjectOfferingId: 's22',
+      subjectName: 'Physique',
+      subjectCode: 'PHYS',
+      coefficient: 4.0,
+      weightsDisplay: 'DC: 25% | TP: 25% | DS: 50%',
+      components: [
+        ComponentGrade(
+          componentId: 'c23',
+          componentName: 'Devoir de Contrôle',
+          weightPercent: 25,
+          grade: null,
+          status: 'ND',
+        ),
+        ComponentGrade(
+          componentId: 'c24',
+          componentName: 'Travaux Pratiques',
+          weightPercent: 25,
+          grade: null,
+          status: 'ND',
+        ),
+        ComponentGrade(
+          componentId: 'c25',
+          componentName: 'Devoir de Synthèse',
+          weightPercent: 50,
           grade: null,
           status: 'ND',
         ),
@@ -178,7 +393,7 @@ final gradesProvider = FutureProvider.family<List<SubjectGradesSummary>, int>((r
       average: null,
     ),
   ];
-});
+}
 
 class ResultatsScreen extends ConsumerWidget {
   const ResultatsScreen({super.key});

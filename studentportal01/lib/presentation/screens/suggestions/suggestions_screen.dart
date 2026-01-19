@@ -56,12 +56,16 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       final user = supabase.auth.currentUser;
       
       if (user == null) {
+        debugPrint('loadSuggestions: No user logged in');
         state = state.copyWith(isLoading: false, suggestions: []);
         return;
       }
       
-      // Fetch suggestions for this student - basic query first
-      List<Map<String, dynamic>> suggestions;
+      debugPrint('loadSuggestions: Fetching for user ${user.id}');
+      
+      // Fetch suggestions for this student - try multiple approaches
+      List<Map<String, dynamic>> suggestions = [];
+      
       try {
         // Try with replies relation
         final response = await supabase
@@ -70,14 +74,27 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
             .eq('student_id', user.id)
             .order('created_at', ascending: false);
         suggestions = (response as List).map((e) => e as Map<String, dynamic>).toList();
-      } catch (_) {
-        // Fallback: basic query without relations
-        final response = await supabase
-            .from('suggestions')
-            .select()
-            .eq('student_id', user.id)
-            .order('created_at', ascending: false);
-        suggestions = (response as List).map((e) => e as Map<String, dynamic>).toList();
+        debugPrint('loadSuggestions: Got ${suggestions.length} suggestions (with replies)');
+      } catch (e1) {
+        debugPrint('loadSuggestions: Failed with replies: $e1');
+        try {
+          // Fallback: basic query without relations
+          final response = await supabase
+              .from('suggestions')
+              .select()
+              .eq('student_id', user.id)
+              .order('created_at', ascending: false);
+          suggestions = (response as List).map((e) => e as Map<String, dynamic>).toList();
+          debugPrint('loadSuggestions: Got ${suggestions.length} suggestions (basic query)');
+        } catch (e2) {
+          debugPrint('loadSuggestions: Basic query also failed: $e2');
+          // RLS might be blocking - show error to user
+          state = state.copyWith(
+            isLoading: false, 
+            error: 'Impossible de charger vos suggestions. Veuillez réessayer.',
+          );
+          return;
+        }
       }
       
       // Fetch attachments for ALL suggestions (don't rely on has_attachment flag which may not be set)
@@ -105,9 +122,10 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
         return SuggestionModel.fromJson(e, attachments: attachmentsMap[id] ?? []);
       }).toList();
       
+      debugPrint('loadSuggestions: Parsed ${models.length} suggestion models');
       state = StudentSuggestionsState(suggestions: models, isLoading: false);
     } catch (e) {
-      debugPrint('Error loading suggestions: $e');
+      debugPrint('loadSuggestions: Unexpected error: $e');
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -176,6 +194,7 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       final basicData = {
         'student_id': user.id,
         'subject': subject,
+        'title': subject, // Also set title (new column)
         'message': body,
         'status': 'sent',  // Original enum: sent, read, replied
       };
@@ -184,6 +203,7 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       final extendedData = {
         'student_id': user.id,
         'subject': subject,
+        'title': subject, // Also set title (new column)
         'message': body,
         'body': body,
         'content': body,
@@ -309,6 +329,7 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       final basicData = {
         'student_id': user.id,
         'subject': subject,
+        'title': subject, // Also set title (new column)
         'message': body,
         'status': 'sent',  // Original enum: sent, read, replied
       };
@@ -317,6 +338,7 @@ class StudentSuggestionsNotifier extends StateNotifier<StudentSuggestionsState> 
       final extendedData = {
         'student_id': user.id,
         'subject': subject,
+        'title': subject, // Also set title (new column)
         'message': body,
         'body': body,
         'content': body,

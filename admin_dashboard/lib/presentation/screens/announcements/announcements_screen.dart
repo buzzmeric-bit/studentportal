@@ -2027,6 +2027,87 @@ class _AnnouncementComposerDialogState
   }
 
   Widget _buildClassSelector() {
+    // Group classes by niveau
+    final Map<String, List<Map<String, dynamic>>> groupedClasses = {};
+    final Map<String, int> niveauOrder = {};
+    
+    for (final c in _classes) {
+      final niveau = c['niveaux'] as Map<String, dynamic>?;
+      final niveauName = niveau?['name'] as String? ?? c['level'] as String? ?? 'Sans niveau';
+      final displayOrder = niveau?['display_order'] as int? ?? 999;
+      groupedClasses.putIfAbsent(niveauName, () => []).add(c);
+      niveauOrder[niveauName] = displayOrder;
+    }
+    
+    // Sort niveaux by display order
+    final sortedNiveaux = groupedClasses.keys.toList()
+      ..sort((a, b) => (niveauOrder[a] ?? 999).compareTo(niveauOrder[b] ?? 999));
+    
+    // Build dropdown items with headers showing student count per niveau
+    final List<DropdownMenuItem<String>> items = [];
+    for (final niveauName in sortedNiveaux) {
+      final classes = groupedClasses[niveauName]!;
+      final totalStudents = classes.fold<int>(0, (sum, c) => sum + (c['student_count'] as int? ?? 0));
+      
+      // Add a disabled header item for the niveau
+      items.add(DropdownMenuItem<String>(
+        enabled: false,
+        value: 'header_$niveauName',
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Icon(Icons.school, size: 16, color: Colors.blue.shade700),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  niveauName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$totalStudents élèves',
+                  style: TextStyle(fontSize: 11, color: Colors.blue.shade700),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ));
+      
+      // Add class items under this niveau
+      for (final c in classes) {
+        final studentCount = c['student_count'] as int? ?? 0;
+        items.add(DropdownMenuItem<String>(
+          value: c['id'] as String,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Row(
+              children: [
+                Expanded(child: Text(c['name'] as String? ?? '')),
+                Text(
+                  '$studentCount',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.person, size: 14, color: Colors.grey.shade400),
+              ],
+            ),
+          ),
+        ));
+      }
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2038,9 +2119,25 @@ class _AnnouncementComposerDialogState
         _classesLoading
             ? const LinearProgressIndicator()
             : _classes.isEmpty
-            ? Text(
-                'Aucune classe disponible',
-                style: TextStyle(color: Colors.grey[600]),
+            ? Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber, color: Colors.orange.shade700),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Aucune classe disponible. Créez des classes dans la section "Classes".',
+                        style: TextStyle(color: Colors.orange.shade800),
+                      ),
+                    ),
+                  ],
+                ),
               )
             : DropdownButtonFormField<String>(
                 value: _selectedClassId,
@@ -2049,16 +2146,16 @@ class _AnnouncementComposerDialogState
                   prefixIcon: Icon(Icons.class_),
                   hintText: 'Sélectionner une classe',
                 ),
-                items: _classes
-                    .map(
-                      (c) => DropdownMenuItem(
-                        value: c['id'] as String,
-                        child: Text('${c['level'] ?? ''} ${c['name']}'),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (v) => setState(() => _selectedClassId = v),
-                validator: (v) => _scope == 'class' && v == null
+                isExpanded: true,
+                menuMaxHeight: 450,
+                items: items,
+                onChanged: (v) {
+                  // Ignore header items
+                  if (v != null && !v.startsWith('header_')) {
+                    setState(() => _selectedClassId = v);
+                  }
+                },
+                validator: (v) => _scope == 'class' && (v == null || v.startsWith('header_'))
                     ? 'Sélectionnez une classe'
                     : null,
               ),

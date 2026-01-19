@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/app_localizations.dart';
 
 class AboutScreen extends ConsumerWidget {
@@ -22,15 +21,18 @@ class AboutScreen extends ConsumerWidget {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF6366F1).withOpacity(0.08),
-              AppColors.background,
-              AppColors.background,
+              Color(0xFFE8D5F2),
+              Color(0xFFD4C4E8),
+              Color(0xFFC9D6F0),
+              Color(0xFFE0EAF5),
+              Color(0xFFF0F5FA),
             ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
         ),
         child: SafeArea(
@@ -56,7 +58,7 @@ class AboutScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                          child: const Icon(Icons.arrow_back_ios_new, size: 20, color: Color(0xFF1F2937)),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -66,6 +68,7 @@ class AboutScreen extends ConsumerWidget {
                           fontSize: 24,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.5,
+                          color: Color(0xFF1F2937),
                         ),
                       ),
                     ],
@@ -180,7 +183,7 @@ class AboutScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: const Icon(
-                                  Icons.school_outlined,
+                                  Icons.location_city_outlined,
                                   color: Color(0xFF3B82F6),
                                   size: 28,
                                 ),
@@ -192,6 +195,7 @@ class AboutScreen extends ConsumerWidget {
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: -0.3,
+                                  color: Color(0xFF1F2937),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -269,56 +273,6 @@ class AboutScreen extends ConsumerWidget {
                       title: l10n.developedBy,
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF10B981).withOpacity(0.1),
-                                  const Color(0xFF06B6D4).withOpacity(0.1),
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF10B981),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Icon(
-                                    Icons.person_outline,
-                                    color: Colors.white,
-                                    size: 24,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Aziz Tounsi',
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Flutter Developer',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
                           GestureDetector(
                             onTap: () => _launchUrl('https://aziz-tounsi.github.io/'),
                             child: Container(
@@ -440,6 +394,7 @@ class _PremiumInfoCard extends StatelessWidget {
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.3,
+                  color: Color(0xFF1F2937),
                 ),
               ),
             ],
@@ -484,6 +439,7 @@ class _PremiumFeatureItem extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
+                color: Color(0xFF1F2937),
               ),
             ),
           ),

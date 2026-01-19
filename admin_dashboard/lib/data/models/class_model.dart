@@ -4,6 +4,10 @@
   final String name;
   final String? groupId;
   final String? groupName;
+  final String? gradeLevelId;
+  final String? gradeLevelName;
+  final String? sectionId;
+  final String? sectionName;
   final String? room;
   final int? capacity;
   final String? level;
@@ -18,6 +22,10 @@
     required this.name,
     this.groupId,
     this.groupName,
+    this.gradeLevelId,
+    this.gradeLevelName,
+    this.sectionId,
+    this.sectionName,
     this.room,
     this.capacity,
     this.level,
@@ -27,25 +35,53 @@
     this.studentCount = 0,
   });
 
+  // Helper to extract name from related object (handles null, Map, or List)
+  static String? _extractName(dynamic data) {
+    if (data == null) return null;
+    if (data is Map) return data['name']?.toString();
+    if (data is List && data.isNotEmpty) return data[0]['name']?.toString();
+    return null;
+  }
+
+  // Helper to safely parse int
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   factory ClassModel.fromJson(Map<String, dynamic> json) => ClassModel(
     id: json['id']?.toString() ?? '',
     schoolId: json['school_id']?.toString() ?? '',
     name: json['name']?.toString() ?? '',
     groupId: json['group_id']?.toString(),
-    groupName: json['groups']?['name']?.toString(),
+    groupName: _extractName(json['groups']),
+    gradeLevelId:
+        json['niveau_id']?.toString() ?? json['grade_level_id']?.toString(),
+    gradeLevelName:
+        _extractName(json['niveaux']) ?? _extractName(json['grade_levels']),
+    sectionId: json['section_id']?.toString(),
+    sectionName: _extractName(json['sections']),
     room: json['room']?.toString(),
-    capacity: json['capacity'] is int ? json['capacity'] : int.tryParse(json['capacity']?.toString() ?? ''),
+    capacity: _parseInt(json['capacity']),
     level: json['level']?.toString(),
-    year: json['year'] is int ? json['year'] : int.tryParse(json['year']?.toString() ?? ''),
+    year: _parseInt(json['year']),
     section: json['section']?.toString(),
-    createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
-    studentCount: json['students_count'] is int ? json['students_count'] : (json['student_count'] is int ? json['student_count'] : 0),
+    createdAt: json['created_at'] != null
+        ? DateTime.tryParse(json['created_at'].toString())
+        : null,
+    studentCount:
+        _parseInt(json['students_count']) ??
+        _parseInt(json['student_count']) ??
+        0,
   );
 
   Map<String, dynamic> toJson() => {
     'school_id': schoolId,
     'name': name,
-    'group_id': groupId,
+    'niveau_id': gradeLevelId,
+    'section_id': sectionId,
     'room': room,
     'capacity': capacity,
     'level': level,

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/theme/app_theme.dart';
 import '../../../core/l10n/app_localizations.dart';
 
 // Provider to fetch contact info from Supabase
@@ -67,15 +66,18 @@ class ContactScreen extends ConsumerWidget {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF3B82F6).withOpacity(0.15),
-              AppColors.background,
-              AppColors.background,
+              Color(0xFFE8D5F2),
+              Color(0xFFD4C4E8),
+              Color(0xFFC9D6F0),
+              Color(0xFFE0EAF5),
+              Color(0xFFF0F5FA),
             ],
+            stops: [0.0, 0.25, 0.5, 0.75, 1.0],
           ),
         ),
         child: SafeArea(
@@ -102,7 +104,7 @@ class ContactScreen extends ConsumerWidget {
                                 ),
                               ],
                             ),
-                            child: const Icon(Icons.arrow_back_ios_new, size: 20),
+                            child: const Icon(Icons.arrow_back_ios_new, size: 20, color: Color(0xFF1F2937)),
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -112,6 +114,7 @@ class ContactScreen extends ConsumerWidget {
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
                             letterSpacing: -0.5,
+                            color: Color(0xFF1F2937),
                           ),
                         ),
                       ],
@@ -228,6 +231,7 @@ class ContactScreen extends ConsumerWidget {
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
                           letterSpacing: -0.3,
+                          color: Color(0xFF1F2937),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -318,17 +322,19 @@ class _PremiumContactCard extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                       letterSpacing: -0.2,
+                      color: Color(0xFF6B7280),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF1F2937),
                     ),
                   ),
                 ],

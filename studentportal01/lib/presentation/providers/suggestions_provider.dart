@@ -194,12 +194,19 @@ class SuggestionRepository {
   }) async {
     final supabase = Supabase.instance.client;
     final authState = ref.read(authProvider);
+    final session = supabase.auth.currentSession;
 
-    if (!authState.isAuthenticated) {
+    // Check both authState and session directly
+    if (!authState.isAuthenticated && session == null) {
       throw Exception('User not authenticated');
     }
 
-    final userId = authState.user!.id;
+    // Get userId from authState or directly from session
+    final userId = authState.user?.id ?? session?.user.id;
+    if (userId == null) {
+      throw Exception('User ID not available');
+    }
+    
     final enrollment = authState.enrollment;
 
     // Create suggestion
@@ -210,7 +217,7 @@ class SuggestionRepository {
       'message': body,  // Old field name for backward compatibility
       'body': body,     // New field name
       'suggestion_type': suggestionType,
-      'status': 'pending',
+      'status': 'sent',  // Database enum: sent, read, replied
       'has_attachment': attachmentUrls != null && attachmentUrls.isNotEmpty,
       'student_name': authState.user?.fullName,
       'student_code': authState.user?.studentCode,

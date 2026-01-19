@@ -1,5 +1,6 @@
 ﻿// ignore_for_file: unused_local_variable
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/config/supabase_config.dart';
 
@@ -48,10 +49,84 @@ class TimetableNotifier extends AsyncNotifier<TimetableState> {
     if (user == null) throw Exception('Non connecte');
 
     final profile = await supabase.from('users').select('school_id').eq('id', user.id).single();
-    final data = await supabase.from('timetable_slots').select('*, subject_offerings(subjects(name), classes(name, school_id), users(full_name))').order('day_of_week').order('start_time');
+    
+    try {
+      final data = await supabase.from('timetable_slots').select('*, subject_offerings(subject_id, class_id, teacher_id, subjects(name), classes(name, school_id), users(full_name))').order('day_of_week').order('start_time');
 
-    final slots = (data as List).map((e) => TimetableSlot.fromJson(e)).where((s) => s.className != null).toList();
-    return TimetableState(slots: slots);
+      final slots = (data as List).map((e) => TimetableSlot.fromJson(e)).where((s) => s.className != null).toList();
+      return TimetableState(slots: slots);
+    } catch (e) {
+      debugPrint('TimetableNotifier error: $e - using fallback');
+      // Fallback: fetch slots without nested relations
+      try {
+        final slots = await supabase.from('timetable_slots').select('*').order('day_of_week').order('start_time');
+        
+        if ((slots as List).isEmpty) return TimetableState(slots: []);
+        
+        // Get unique subject_offering_ids
+        final offeringIds = slots.map((s) => s['subject_offering_id']).where((id) => id != null).toSet().toList();
+        if (offeringIds.isEmpty) return TimetableState(slots: []);
+        
+        final offerings = await supabase.from('subject_offerings').select('id, subject_id, class_id, teacher_id').inFilter('id', offeringIds);
+        
+        Map<String, dynamic> offeringsMap = {};
+        for (var o in (offerings as List)) {
+          offeringsMap[o['id']] = o;
+        }
+        
+        // Get subjects, classes, teachers
+        final subjectIds = (offerings).map((o) => o['subject_id']).where((id) => id != null).toSet().toList();
+        final classIds = (offerings).map((o) => o['class_id']).where((id) => id != null).toSet().toList();
+        final teacherIds = (offerings).map((o) => o['teacher_id']).where((id) => id != null).toSet().toList();
+        
+        Map<String, dynamic> subjectsMap = {};
+        Map<String, dynamic> classesMap = {};
+        Map<String, dynamic> teachersMap = {};
+        
+        if (subjectIds.isNotEmpty) {
+          final subjects = await supabase.from('subjects').select('id, name').inFilter('id', subjectIds);
+          for (var s in (subjects as List)) {
+            subjectsMap[s['id']] = s;
+          }
+        }
+        if (classIds.isNotEmpty) {
+          final classes = await supabase.from('classes').select('id, name, school_id').inFilter('id', classIds);
+          for (var c in (classes as List)) {
+            classesMap[c['id']] = c;
+          }
+        }
+        if (teacherIds.isNotEmpty) {
+          final teachers = await supabase.from('users').select('id, full_name').inFilter('id', teacherIds);
+          for (var t in (teachers as List)) {
+            teachersMap[t['id']] = t;
+          }
+        }
+        
+        final result = slots.map((slot) {
+          final offering = offeringsMap[slot['subject_offering_id']];
+          final subject = offering != null ? subjectsMap[offering['subject_id']] : null;
+          final cls = offering != null ? classesMap[offering['class_id']] : null;
+          final teacher = offering != null ? teachersMap[offering['teacher_id']] : null;
+          
+          return TimetableSlot(
+            id: slot['id']?.toString() ?? '',
+            subjectOfferingId: slot['subject_offering_id']?.toString() ?? '',
+            dayOfWeek: slot['day_of_week'] ?? 1,
+            startTime: slot['start_time']?.toString() ?? '08:00',
+            endTime: slot['end_time']?.toString() ?? '09:00',
+            room: slot['room']?.toString(),
+            subjectName: subject?['name']?.toString(),
+            className: cls?['name']?.toString(),
+            teacherName: teacher?['full_name']?.toString(),
+          );
+        }).where((s) => s.className != null).toList();
+        
+        return TimetableState(slots: result);
+      } catch (e2) {
+        debugPrint('TimetableNotifier fallback error: $e2');
+        return TimetableState(slots: []);
+      }
+    }
   }
 
   Future<void> create({required String subjectOfferingId, required int dayOfWeek, required String startTime, required String endTime, String? room}) async {

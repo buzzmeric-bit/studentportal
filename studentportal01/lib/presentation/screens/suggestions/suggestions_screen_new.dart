@@ -126,7 +126,8 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen>
                       bool matchesFilter = true;
                       switch (_selectedFilter) {
                         case 'pending':
-                          matchesFilter = s.status == 'pending' && !s.isRead;
+                          // 'sent' is the DB enum value for pending/unread suggestions
+                          matchesFilter = (s.status == 'pending' || s.status == 'sent') && !s.isRead;
                           break;
                         case 'read':
                           matchesFilter = s.isRead;
@@ -1233,6 +1234,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen>
                                 child: TextField(
                                   controller: _searchController,
                                   focusNode: _searchFocusNode,
+                                  cursorColor: Colors.grey[600],
                                   onChanged: (value) =>
                                       setState(() => _searchQuery = value),
                                   style: TextStyle(
@@ -1247,6 +1249,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen>
                                       fontSize: 15,
                                       fontWeight: FontWeight.w400,
                                     ),
+                                    filled: false,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,

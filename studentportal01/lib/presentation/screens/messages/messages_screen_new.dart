@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/announcements_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class MessagesScreen extends ConsumerStatefulWidget {
   const MessagesScreen({super.key});
@@ -234,6 +235,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                 child: TextField(
                                   controller: _searchController,
                                   focusNode: _searchFocusNode,
+                                  cursorColor: Colors.grey[600],
                                   onChanged: (value) =>
                                       setState(() => _searchQuery = value),
                                   style: TextStyle(
@@ -248,6 +250,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
                                     ),
+                                    filled: false,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -422,10 +425,12 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
+                    cursorColor: Colors.grey[600],
                     onChanged: (value) => setState(() => _searchQuery = value),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
                     ),
                     decoration: InputDecoration(
                       hintText: 'Rechercher un message...',
@@ -433,6 +438,7 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                         color: Colors.grey[400],
                         fontSize: 15,
                       ),
+                      filled: false,
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -464,7 +470,11 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     final messagesAsync = ref.watch(classMessagesProvider);
+
+    // Show loading if auth is still loading
+    final isAuthLoading = authState.isLoading;
 
     return Container(
       decoration: const BoxDecoration(
@@ -495,6 +505,17 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
             ),
 
             // Messages List
+            // Show loading if auth is still loading
+            if (isAuthLoading)
+              const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              )
+            else
             messagesAsync.when(
               loading: () => const SliverToBoxAdapter(
                 child: Center(
@@ -596,12 +617,9 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
     final hasDocumentAttachment = message.attachments.any(
       (att) => !_isImageFile(att.fileUrl),
     );
-    // Count images and documents separately
+    // Count images
     final imageCount = message.attachments.where(
       (att) => _isImageFile(att.fileUrl),
-    ).length;
-    final documentCount = message.attachments.where(
-      (att) => !_isImageFile(att.fileUrl),
     ).length;
 
     return Padding(
@@ -729,41 +747,107 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen>
                     ),
                   ],
                   const SizedBox(height: 10),
-                  // Body content
-                  Text(
-                    message.body,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  // Attachment preview - show first attachment from list
-                  if (message.attachments.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    _buildAttachmentPreview(
-                      message.attachments.first.fileUrl,
-                      message.attachments.first.effectiveName,
-                    ),
-                    // Show "+autre(s)" only if there are more of the same type
-                    if (_isImageFile(message.attachments.first.fileUrl)
-                        ? imageCount > 1
-                        : documentCount > 1)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                  // Body content with small image thumbnail
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
                         child: Text(
-                          '+${_isImageFile(message.attachments.first.fileUrl) ? imageCount - 1 : documentCount - 1} autre(s)',
+                          message.body,
                           style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[500],
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
+                            color: Colors.grey[700],
+                            height: 1.4,
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                  ],
+                      // Small image thumbnail at end of body
+                      if (imageCount > 0) ...[
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () => _openAttachment(
+                            message.attachments
+                                .firstWhere((att) => _isImageFile(att.fileUrl))
+                                .fileUrl,
+                          ),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.network(
+                                    message.attachments
+                                        .firstWhere((att) => _isImageFile(att.fileUrl))
+                                        .fileUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Container(
+                                          color: Colors.grey[200],
+                                          child: Icon(
+                                            Icons.image_outlined,
+                                            size: 18,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: Colors.grey[100],
+                                        child: const Center(
+                                          child: SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  // Show image count badge if multiple
+                                  if (imageCount > 1)
+                                    Positioned(
+                                      bottom: 2,
+                                      right: 2,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.6),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          '+${imageCount - 1}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   // Footer with type and time
                   Row(

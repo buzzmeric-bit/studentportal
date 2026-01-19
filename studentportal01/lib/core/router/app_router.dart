@@ -10,7 +10,7 @@ import '../../presentation/screens/messages/messages_screen_new.dart';
 import '../../presentation/screens/suggestions/suggestions_screen_new.dart';
 import '../../presentation/screens/suggestions/write_suggestion_screen.dart';
 import '../../presentation/screens/absences/absences_screen.dart';
-import '../../presentation/screens/resultats/resultats_screen.dart';
+import '../../presentation/screens/resultats/resultats_screen_v2.dart';
 import '../../presentation/screens/emploi/emploi_screen.dart';
 import '../../presentation/screens/courses/courses_screen.dart';
 import '../../presentation/screens/courses/course_detail_screen.dart';
@@ -123,6 +123,70 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               child: const WriteSuggestionScreen(),
             ),
           ),
+          // Feature pages WITH nav bar
+          GoRoute(
+            path: '/absences',
+            name: 'absences',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const AbsencesScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/resultats',
+            name: 'resultats',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const ResultatsScreenV2(),
+            ),
+          ),
+          GoRoute(
+            path: '/emploi',
+            name: 'emploi',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const EmploiScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/mon-solde',
+            name: 'mon-solde',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const MonSoldeScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/documents',
+            name: 'documents',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const DocumentsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/profile',
+            name: 'profile',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const ProfileScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/settings',
+            name: 'settings',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const SettingsScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/contact',
+            name: 'contact',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const ContactScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/about',
+            name: 'about',
+            pageBuilder: (context, state) => NoTransitionPage(
+              child: const AboutScreen(),
+            ),
+          ),
         ],
       ),
       
@@ -134,51 +198,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final courseId = state.pathParameters['courseId']!;
           return CourseDetailScreen(courseId: courseId);
         },
-      ),
-      GoRoute(
-        path: '/absences',
-        name: 'absences',
-        builder: (context, state) => const AbsencesScreen(),
-      ),
-      GoRoute(
-        path: '/resultats',
-        name: 'resultats',
-        builder: (context, state) => const ResultatsScreen(),
-      ),
-      GoRoute(
-        path: '/emploi',
-        name: 'emploi',
-        builder: (context, state) => const EmploiScreen(),
-      ),
-      GoRoute(
-        path: '/mon-solde',
-        name: 'mon-solde',
-        builder: (context, state) => const MonSoldeScreen(),
-      ),
-      GoRoute(
-        path: '/documents',
-        name: 'documents',
-        builder: (context, state) => const DocumentsScreen(),
-      ),
-      GoRoute(
-        path: '/profile',
-        name: 'profile',
-        builder: (context, state) => const ProfileScreen(),
-      ),
-      GoRoute(
-        path: '/settings',
-        name: 'settings',
-        builder: (context, state) => const SettingsScreen(),
-      ),
-      GoRoute(
-        path: '/contact',
-        name: 'contact',
-        builder: (context, state) => const ContactScreen(),
-      ),
-      GoRoute(
-        path: '/about',
-        name: 'about',
-        builder: (context, state) => const AboutScreen(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

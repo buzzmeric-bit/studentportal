@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/suggestions_provider.dart';
 import '../../widgets/admin_sidebar.dart';
-import '../users/user_detail_screen.dart';
+import '../users/user_profile_screen.dart';
 
 // =====================================================
 // SMART SEARCH HELPERS (same as announcements)
@@ -825,7 +825,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
           context,
           MaterialPageRoute(
             builder: (context) =>
-                UserDetailScreen(userId: s.studentId, userName: s.studentName),
+                UserProfileScreen(userId: s.studentId, userName: s.studentName),
           ),
         );
         break;
@@ -1123,7 +1123,7 @@ class _SuggestionsScreenState extends ConsumerState<SuggestionsScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => UserDetailScreen(
+                              builder: (context) => UserProfileScreen(
                                 userId: s.studentId,
                                 userName: s.studentName,
                               ),

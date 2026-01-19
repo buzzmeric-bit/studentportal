@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/announcements_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
@@ -235,6 +236,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                                 child: TextField(
                                   controller: _searchController,
                                   focusNode: _searchFocusNode,
+                                  cursorColor: Colors.grey[600],
                                   onChanged: (value) =>
                                       setState(() => _searchQuery = value),
                                   style: TextStyle(
@@ -249,6 +251,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                                       fontSize: 16,
                                       fontWeight: FontWeight.w400,
                                     ),
+                                    filled: false,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -427,10 +430,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                   child: TextField(
                     controller: _searchController,
                     focusNode: _searchFocusNode,
+                    cursorColor: Colors.grey[600],
                     onChanged: (value) => setState(() => _searchQuery = value),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
+                      color: Colors.grey[800],
                     ),
                     decoration: InputDecoration(
                       hintText: 'Rechercher une notification...',
@@ -438,6 +443,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                         color: Colors.grey[400],
                         fontSize: 15,
                       ),
+                      filled: false,
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -469,7 +475,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
     final announcementsAsync = ref.watch(globalAnnouncementsProvider);
+
+    // Show loading if auth is still loading
+    final isAuthLoading = authState.isLoading;
 
     return Container(
       decoration: const BoxDecoration(
@@ -488,18 +498,36 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
       ),
       child: SafeArea(
         bottom: false,
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            // Header
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-                child: _buildAnimatedHeader(),
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(globalAnnouncementsProvider);
+            await ref.read(globalAnnouncementsProvider.future);
+          },
+          color: _accentColor,
+          backgroundColor: Colors.white,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+            slivers: [
+              // Header
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                  child: _buildAnimatedHeader(),
+                ),
               ),
-            ),
 
             // Notifications List
+            // Show loading if auth is still loading
+            if (isAuthLoading)
+              const SliverToBoxAdapter(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(40),
+                    child: CircularProgressIndicator(),
+                  ),
+                ),
+              )
+            else
             announcementsAsync.when(
               loading: () => const SliverToBoxAdapter(
                 child: Center(
@@ -586,6 +614,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
               },
             ),
           ],
+        ),
         ),
       ),
     );
@@ -737,20 +766,111 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                     ),
                   ],
                   const SizedBox(height: 10),
-                  // Body content
-                  Text(
-                    announcement.body,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.grey[700],
-                      height: 1.4,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  // Body content with small image thumbnail at end
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          announcement.body,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[700],
+                            height: 1.4,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // Small image thumbnail at end of body
+                      if (imageCount > 0) ...[
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () => _showImageViewer(
+                            announcement.attachments
+                                .where((att) => _isImageFile(att.fileUrl))
+                                .map((att) => att.fileUrl)
+                                .toList(),
+                            0,
+                          ),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.network(
+                                    announcement.attachments
+                                        .firstWhere((att) => _isImageFile(att.fileUrl))
+                                        .fileUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        Container(
+                                          color: Colors.grey[200],
+                                          child: Icon(
+                                            Icons.image_outlined,
+                                            size: 18,
+                                            color: Colors.grey[400],
+                                          ),
+                                        ),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: Colors.grey[100],
+                                        child: const Center(
+                                          child: SizedBox(
+                                            width: 14,
+                                            height: 14,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  // Show image count badge if multiple
+                                  if (imageCount > 1)
+                                    Positioned(
+                                      bottom: 2,
+                                      right: 2,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.7),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          '+${imageCount - 1}',
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                   const SizedBox(height: 12),
-                  // Footer with sender, attachment preview, and time
+                  // Footer with sender and time
                   Row(
                     children: [
                       // Sender info
@@ -793,27 +913,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
                       ),
                     ],
                   ),
-                  // Image attachments - show full width below footer
-                  if (announcement.attachments.isNotEmpty && _isImageFile(announcement.attachments.first.fileUrl)) ...[
-                    const SizedBox(height: 10),
-                    _buildAttachmentPreview(
-                      announcement.attachments.first.fileUrl,
-                      announcement.attachments.first.effectiveName,
-                    ),
-                    // Show "+autre(s)" only if there are more images
-                    if (imageCount > 1)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '+${imageCount - 1} autre(s)',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[500],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                  ],
                 ],
               ),
             ),
@@ -1365,6 +1464,99 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen>
         );
       }
     }
+  }
+
+  void _showImageViewer(List<String> imageUrls, int initialIndex) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.9),
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.pop(context),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrls[initialIndex],
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: Colors.grey[900],
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                          SizedBox(height: 16),
+                          Text(
+                            'Image non disponible',
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ],
+                      ),
+                    ),
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              // Close button
+              Positioned(
+                top: 50,
+                right: 20,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              // Image counter if multiple
+              if (imageUrls.length > 1)
+                Positioned(
+                  top: 50,
+                  left: 20,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${initialIndex + 1} / ${imageUrls.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   IconData _getAttachmentIcon(String url) {

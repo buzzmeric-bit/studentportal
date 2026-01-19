@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'auth_provider.dart';
@@ -134,42 +135,105 @@ final globalAnnouncementsProvider = FutureProvider<List<StudentAnnouncement>>((
   final supabase = Supabase.instance.client;
   final authState = ref.watch(authProvider);
 
-  if (!authState.isAuthenticated) {
+  // Check if still loading - wait for auth to complete
+  if (authState.isLoading) {
+    debugPrint('globalAnnouncementsProvider: Auth still loading, waiting...');
+    // Return empty for now, will be re-triggered when auth state changes
     return [];
   }
 
-  final schoolId = authState.user?.schoolId;
+  // Check authentication - also check Supabase session directly as fallback
+  final session = supabase.auth.currentSession;
+  if (!authState.isAuthenticated && session == null) {
+    debugPrint('globalAnnouncementsProvider: Not authenticated (no session)');
+    return [];
+  }
+
+  // If we have a session but auth state not loaded yet, fetch school_id directly
+  String? schoolId = authState.user?.schoolId;
+  
+  // Fallback: get school_id from enrollment's class
+  if (schoolId == null && authState.enrollment?.classInfo != null) {
+    schoolId = authState.enrollment!.classInfo!.schoolId;
+    debugPrint('globalAnnouncementsProvider: Got schoolId from enrollment class: $schoolId');
+  }
+  
+  // Last resort: use RPC to bypass RLS
+  if (schoolId == null && session != null) {
+    debugPrint('globalAnnouncementsProvider: Using RPC to fetch school_id...');
+    try {
+      // Try get_my_school_id RPC first
+      final rpcResult = await supabase.rpc('get_my_school_id');
+      if (rpcResult != null) {
+        schoolId = rpcResult as String;
+        debugPrint('globalAnnouncementsProvider: Got schoolId from RPC: $schoolId');
+      }
+    } catch (e) {
+      debugPrint('globalAnnouncementsProvider: RPC get_my_school_id failed: $e');
+    }
+    
+    // Fallback: try get_my_enrollment_data RPC
+    if (schoolId == null) {
+      try {
+        final enrollmentData = await supabase.rpc('get_my_enrollment_data');
+        if (enrollmentData != null) {
+          schoolId = enrollmentData['classes']?['school_id'] as String?;
+          debugPrint('globalAnnouncementsProvider: Got schoolId from enrollment RPC: $schoolId');
+        }
+      } catch (e) {
+        debugPrint('globalAnnouncementsProvider: RPC get_my_enrollment_data failed: $e');
+      }
+    }
+  }
+  
   if (schoolId == null) {
+    debugPrint('globalAnnouncementsProvider: No school_id available');
     return [];
   }
 
-  final response = await supabase
-      .from('announcements_global')
-      .select()
-      .eq('school_id', schoolId)
-      .isFilter('deleted_at', null)
-      .order('is_pinned', ascending: false)
-      .order('published_at', ascending: false)
-      .limit(50);
+  debugPrint('globalAnnouncementsProvider: Fetching for school_id=$schoolId');
 
-  final announcements = response as List;
-  final announcementIds = announcements.map((a) => a['id'] as String).toList();
+  try {
+    final response = await supabase
+        .from('announcements_global')
+        .select()
+        .eq('school_id', schoolId)
+        .isFilter('deleted_at', null)
+        .order('is_pinned', ascending: false)
+        .order('published_at', ascending: false)
+        .limit(50);
 
-  // Fetch attachments for all announcements
-  final attachmentsMap = await _fetchAttachments(
-    supabase,
-    announcementIds,
-    'global',
-  );
+    final announcements = response as List;
+    debugPrint('globalAnnouncementsProvider: Fetched ${announcements.length} global announcements');
+    
+    final announcementIds = announcements.map((a) => a['id'] as String).toList();
 
-  return announcements
-      .map(
-        (json) => StudentAnnouncement.fromJson(
-          json,
-          attachments: attachmentsMap[json['id']] ?? [],
-        ),
-      )
-      .toList();
+    // Fetch attachments for all announcements
+    Map<String, List<AnnouncementAttachment>> attachmentsMap = {};
+    if (announcementIds.isNotEmpty) {
+      try {
+        attachmentsMap = await _fetchAttachments(
+          supabase,
+          announcementIds,
+          'global',
+        );
+      } catch (e) {
+        debugPrint('globalAnnouncementsProvider: Error fetching attachments: $e');
+      }
+    }
+
+    return announcements
+        .map(
+          (json) => StudentAnnouncement.fromJson(
+            json,
+            attachments: attachmentsMap[json['id']] ?? [],
+          ),
+        )
+        .toList();
+  } catch (e) {
+    debugPrint('globalAnnouncementsProvider error: $e');
+    return [];
+  }
 });
 
 /// Provider for class messages
@@ -179,48 +243,108 @@ final classMessagesProvider = FutureProvider<List<StudentAnnouncement>>((
   final supabase = Supabase.instance.client;
   final authState = ref.watch(authProvider);
 
-  if (!authState.isAuthenticated || authState.enrollment == null) {
+  // Check if still loading - wait for auth to complete
+  if (authState.isLoading) {
+    debugPrint('classMessagesProvider: Auth still loading, waiting...');
     return [];
   }
 
-  final classId = authState.enrollment!.classId;
-  final groupId = authState.enrollment!.groupId;
-
-  // Build query - get messages for user's class
-  var query = supabase
-      .from('announcements_class')
-      .select()
-      .eq('class_id', classId)
-      .isFilter('deleted_at', null);
-
-  // Also filter by group if specified, or get class-wide messages (null group_id)
-  if (groupId != null) {
-    query = query.or('group_id.eq.$groupId,group_id.is.null');
+  // Check authentication - also check Supabase session directly as fallback
+  final session = supabase.auth.currentSession;
+  if (!authState.isAuthenticated && session == null) {
+    debugPrint('classMessagesProvider: Not authenticated (no session)');
+    return [];
   }
 
-  final response = await query
-      .order('is_pinned', ascending: false)
-      .order('published_at', ascending: false)
-      .limit(50);
+  // Get class_id and group_id from enrollment or fetch directly
+  String? classId = authState.enrollment?.classId;
+  String? groupId = authState.enrollment?.groupId;
+  
+  // Fallback: use RPC to bypass RLS
+  if (classId == null && session != null) {
+    debugPrint('classMessagesProvider: Using RPC to fetch enrollment...');
+    try {
+      // Try get_my_class_id RPC first
+      final rpcResult = await supabase.rpc('get_my_class_id');
+      if (rpcResult != null) {
+        classId = rpcResult as String;
+        debugPrint('classMessagesProvider: Got classId from RPC: $classId');
+      }
+    } catch (e) {
+      debugPrint('classMessagesProvider: RPC get_my_class_id failed: $e');
+    }
+    
+    // Fallback: try get_my_enrollment_data RPC
+    if (classId == null) {
+      try {
+        final enrollmentData = await supabase.rpc('get_my_enrollment_data');
+        if (enrollmentData != null) {
+          classId = enrollmentData['class_id'] as String?;
+          groupId = enrollmentData['group_id'] as String?;
+          debugPrint('classMessagesProvider: Got classId from enrollment RPC: $classId');
+        }
+      } catch (e) {
+        debugPrint('classMessagesProvider: RPC get_my_enrollment_data failed: $e');
+      }
+    }
+  }
+  
+  if (classId == null) {
+    debugPrint('classMessagesProvider: No class_id available');
+    return [];
+  }
 
-  final announcements = response as List;
-  final announcementIds = announcements.map((a) => a['id'] as String).toList();
+  debugPrint('classMessagesProvider: Fetching for class_id=$classId, group_id=$groupId');
 
-  // Fetch attachments for all announcements
-  final attachmentsMap = await _fetchAttachments(
-    supabase,
-    announcementIds,
-    'class',
-  );
+  try {
+    // Build query - get messages for user's class
+    var query = supabase
+        .from('announcements_class')
+        .select()
+        .eq('class_id', classId)
+        .isFilter('deleted_at', null);
 
-  return announcements
-      .map(
-        (json) => StudentAnnouncement.fromJson(
-          json,
-          attachments: attachmentsMap[json['id']] ?? [],
-        ),
-      )
-      .toList();
+    // Also filter by group if specified, or get class-wide messages (null group_id)
+    if (groupId != null) {
+      query = query.or('group_id.eq.$groupId,group_id.is.null');
+    }
+
+    final response = await query
+        .order('is_pinned', ascending: false)
+        .order('published_at', ascending: false)
+        .limit(50);
+
+    final announcements = response as List;
+    debugPrint('classMessagesProvider: Fetched ${announcements.length} class messages');
+    
+    final announcementIds = announcements.map((a) => a['id'] as String).toList();
+
+    // Fetch attachments for all announcements
+    Map<String, List<AnnouncementAttachment>> attachmentsMap = {};
+    if (announcementIds.isNotEmpty) {
+      try {
+        attachmentsMap = await _fetchAttachments(
+          supabase,
+          announcementIds,
+          'class',
+        );
+      } catch (e) {
+        debugPrint('classMessagesProvider: Error fetching attachments: $e');
+      }
+    }
+
+    return announcements
+        .map(
+          (json) => StudentAnnouncement.fromJson(
+            json,
+            attachments: attachmentsMap[json['id']] ?? [],
+          ),
+        )
+        .toList();
+  } catch (e) {
+    debugPrint('classMessagesProvider error: $e');
+    return [];
+  }
 });
 
 /// Combined provider for all announcements (for unified feed if needed)

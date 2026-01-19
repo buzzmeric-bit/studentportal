@@ -1,11 +1,14 @@
 import 'dart:ui';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/suggestions_provider.dart';
+import '../../providers/avatar_provider.dart';
 import '../../widgets/glass_card.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -50,26 +53,31 @@ class HomeScreen extends ConsumerWidget {
                 behavior: ScrollConfiguration.of(
                   context,
                 ).copyWith(scrollbars: false),
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: screenHeight),
-                    child: Column(
-                      children: [
-                        // Hero Header Section - fixed height
-                        SizedBox(
-                          height: headerHeight,
-                          child: SafeArea(
-                            bottom: false,
-                            child: _buildHeader(context, user, enrollment),
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await ref.read(authProvider.notifier).refreshUserData();
+                  },
+                  color: const Color(0xFF6366F1),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: screenHeight),
+                      child: Column(
+                        children: [
+                          // Hero Header Section - fixed height
+                          SizedBox(
+                            height: headerHeight,
+                            child: SafeArea(
+                              bottom: false,
+                              child: _buildHeader(context, ref, user, enrollment),
+                            ),
                           ),
-                        ),
 
-                        // Frosted glass content area with rounded top
-                        ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(40),
-                            topRight: Radius.circular(40),
+                          // Frosted glass content area with rounded top
+                          ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(40),
+                              topRight: Radius.circular(40),
                           ),
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
@@ -119,6 +127,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                ),
               ),
             ],
           );
@@ -127,7 +136,8 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, dynamic user, dynamic enrollment) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, dynamic user, dynamic enrollment) {
+    final avatarState = ref.watch(avatarProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
@@ -201,21 +211,7 @@ class HomeScreen extends ConsumerWidget {
                         ],
                       ),
                       child: ClipOval(
-                        child: user?.photoUrl != null
-                            ? Image.network(
-                                user!.photoUrl!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => const Icon(
-                                  Icons.person_rounded,
-                                  color: Color(0xFF8B5CF6),
-                                  size: 36,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.person_rounded,
-                                color: Color(0xFF8B5CF6),
-                                size: 36,
-                              ),
+                        child: _buildAvatarContent(avatarState, user),
                       ),
                     ),
                   ),
@@ -295,12 +291,11 @@ class HomeScreen extends ConsumerWidget {
 
               const SizedBox(height: 8),
 
-              // Class and group info - plain text under the name
+              // Niveau and Class info - plain text under the name (no pill background)
               Text(
-                enrollment != null
-                    ? '${enrollment.classInfo?.name ?? '1ère Année Licence'}'
-                          '${enrollment.groupInfo != null ? ' • Groupe ${enrollment.groupInfo!.name}' : ' • Groupe A'}'
-                    : '1ère Année Licence • Groupe A',
+                enrollment != null && enrollment.classInfo != null
+                    ? '${enrollment.classInfo!.name}${enrollment.groupInfo != null ? ' • Groupe ${enrollment.groupInfo!.name}' : ''}'
+                    : 'Classe non définie',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -419,45 +414,6 @@ class HomeScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 24),
-                  // App Logo
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withOpacity(0.2),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Image.asset(
-                        'assets/pythaonelogo.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(
-                          Icons.school_rounded,
-                          color: Color(0xFF6366F1),
-                          size: 36,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'PythaOne',
-                    style: TextStyle(
-                      color: Color(0xFF1F2937),
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
                   _DrawerItem(
                     icon: Icons.settings_rounded,
                     label: l10n.settings,
@@ -537,6 +493,72 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAvatarContent(AvatarState avatarState, dynamic user) {
+    // Priority: Custom avatar > Preset avatar > User photo > Default icon
+    if (avatarState.isCustom && avatarState.customFilePath != null) {
+      // Custom uploaded image
+      if (kIsWeb) {
+        // On web, use Image.network for blob URLs
+        return Image.network(
+          avatarState.customFilePath!,
+          fit: BoxFit.cover,
+          width: 64,
+          height: 64,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.person_rounded,
+            color: Color(0xFF8B5CF6),
+            size: 36,
+          ),
+        );
+      } else {
+        return Image.file(
+          File(avatarState.customFilePath!),
+          fit: BoxFit.cover,
+          width: 64,
+          height: 64,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.person_rounded,
+            color: Color(0xFF8B5CF6),
+            size: 36,
+          ),
+        );
+      }
+    } else if (avatarState.presetPath != null) {
+      // Preset avatar
+      return Image.asset(
+        avatarState.presetPath!,
+        fit: BoxFit.cover,
+        width: 64,
+        height: 64,
+        errorBuilder: (_, __, ___) => const Icon(
+          Icons.person_rounded,
+          color: Color(0xFF8B5CF6),
+          size: 36,
+        ),
+      );
+    } else if (user?.photoUrl != null) {
+      // User's photo URL from database
+      return Image.network(
+        user!.photoUrl!,
+        fit: BoxFit.cover,
+        width: 64,
+        height: 64,
+        errorBuilder: (_, __, ___) => const Icon(
+          Icons.person_rounded,
+          color: Color(0xFF8B5CF6),
+          size: 36,
+        ),
+      );
+    } else {
+      // Default person icon
+      return const Icon(
+        Icons.person_rounded,
+        color: Color(0xFF8B5CF6),
+        size: 36,
+      );
+    }
   }
 }
 

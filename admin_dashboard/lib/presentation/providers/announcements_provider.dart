@@ -112,18 +112,44 @@ class AnnouncementsNotifier extends AsyncNotifier<AnnouncementsState> {
     final profile = await supabase.from('users').select('school_id').eq('id', user.id).single();
     final schoolId = profile['school_id'] as String?;
 
-    // Use the unified view vw_announcements for reading - filter out soft deleted
-    final data = await supabase
-        .from('vw_announcements')
-        .select()
-        .or('school_id.eq.$schoolId,school_id.is.null')
-        .isFilter('deleted_at', null) // Only show non-deleted announcements
-        .order('is_pinned', ascending: false)
-        .order('published_at', ascending: false);
+    try {
+      // Use the unified view vw_announcements for reading - filter out soft deleted
+      final data = await supabase
+          .from('vw_announcements')
+          .select()
+          .or('school_id.eq.$schoolId,school_id.is.null')
+          .order('is_pinned', ascending: false)
+          .order('published_at', ascending: false);
 
-    return AnnouncementsState(
-      announcements: (data as List).map((e) => AnnouncementModel.fromJson(e)).toList(),
-    );
+      return AnnouncementsState(
+        announcements: (data as List).map((e) => AnnouncementModel.fromJson(e)).toList(),
+      );
+    } catch (e) {
+      // Fallback: try to fetch from individual tables
+      try {
+        final globalData = await supabase
+            .from('announcements_global')
+            .select()
+            .eq('school_id', schoolId ?? '')
+            .order('published_at', ascending: false);
+        
+        final classData = await supabase
+            .from('announcements_class')
+            .select()
+            .order('published_at', ascending: false);
+
+        final List<AnnouncementModel> announcements = [
+          ...(globalData as List).map((e) => AnnouncementModel.fromJson({...e, 'scope': 'global'})),
+          ...(classData as List).map((e) => AnnouncementModel.fromJson({...e, 'scope': 'class'})),
+        ];
+        
+        announcements.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        return AnnouncementsState(announcements: announcements);
+      } catch (_) {
+        // If all fails, return empty
+        return AnnouncementsState(announcements: []);
+      }
+    }
   }
 
   /// Force refresh - clears cache and reloads from Supabase
@@ -136,24 +162,93 @@ class AnnouncementsNotifier extends AsyncNotifier<AnnouncementsState> {
     state.whenData((c) => state = AsyncData(c.copyWith(searchQuery: q)));
   }
 
-  /// Fetch all classes from database
+  /// Fetch all classes from database with niveau information and student count
   Future<List<Map<String, dynamic>>> fetchClasses() async {
     final supabase = SupabaseConfig.client;
     final user = supabase.auth.currentUser;
     if (user == null) return [];
 
-    final profile = await supabase.from('users').select('school_id').eq('id', user.id).single();
-    final schoolId = profile['school_id'] as String?;
-    if (schoolId == null) return [];
+    try {
+      final profile = await supabase.from('users').select('school_id').eq('id', user.id).single();
+      final schoolId = profile['school_id'] as String?;
+      if (schoolId == null) return [];
 
-    final data = await supabase
-        .from('classes')
-        .select('id, name, level')
-        .eq('school_id', schoolId)
-        .order('level')
-        .order('name');
+      // Fetch classes with niveau info
+      final classesData = await supabase
+          .from('classes')
+          .select('id, name, niveau_id')
+          .eq('school_id', schoolId)
+          .eq('is_active', true)
+          .order('name');
 
-    return (data as List).cast<Map<String, dynamic>>();
+      final classes = (classesData as List).cast<Map<String, dynamic>>();
+      
+      // Fetch niveaux separately
+      final niveauxData = await supabase
+          .from('niveaux')
+          .select('id, code, name, cycle, display_order')
+          .order('display_order');
+      
+      final niveauxMap = <String, Map<String, dynamic>>{};
+      for (final n in (niveauxData as List)) {
+        niveauxMap[n['id'] as String] = n as Map<String, dynamic>;
+      }
+      
+      // Get student counts per class via RPC (security definer to bypass RLS)
+      final studentCounts = <String, int>{};
+      try {
+        final stats = await supabase.rpc('get_class_stats');
+        for (final row in (stats as List)) {
+          final classId = row['class_id'] as String?;
+          final count = (row['student_count'] as num?)?.toInt() ?? 0;
+          if (classId != null) studentCounts[classId] = count;
+        }
+      } catch (e) {
+        debugPrint('Error fetching class stats rpc: $e');
+        // Fallback: zero counts
+      }
+      
+      // Enrich classes with niveau info and student count
+      for (final c in classes) {
+        final niveauId = c['niveau_id'] as String?;
+        if (niveauId != null && niveauxMap.containsKey(niveauId)) {
+          c['niveaux'] = niveauxMap[niveauId];
+        }
+        c['student_count'] = studentCounts[c['id'] as String] ?? 0;
+      }
+      
+      // Sort by niveau display_order then by class name
+      classes.sort((a, b) {
+        final niveauA = a['niveaux'] as Map<String, dynamic>?;
+        final niveauB = b['niveaux'] as Map<String, dynamic>?;
+        final orderA = niveauA?['display_order'] as int? ?? 999;
+        final orderB = niveauB?['display_order'] as int? ?? 999;
+        if (orderA != orderB) return orderA.compareTo(orderB);
+        return (a['name'] as String? ?? '').compareTo(b['name'] as String? ?? '');
+      });
+      
+      return classes;
+    } catch (e) {
+      debugPrint('Error fetching classes: $e');
+      return [];
+    }
+  }
+  
+  /// Fetch niveaux (grade levels) for the school
+  Future<List<Map<String, dynamic>>> fetchNiveaux() async {
+    final supabase = SupabaseConfig.client;
+    
+    try {
+      final data = await supabase
+          .from('niveaux')
+          .select('id, code, name, cycle, display_order')
+          .order('display_order');
+      
+      return (data as List).cast<Map<String, dynamic>>();
+    } catch (e) {
+      debugPrint('Error fetching niveaux: $e');
+      return [];
+    }
   }
 
   /// Create announcement - routes to correct table based on scope

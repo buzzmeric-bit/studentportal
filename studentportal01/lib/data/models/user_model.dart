@@ -28,21 +28,33 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // Handle datetime parsing safely
+    DateTime? parseDate(dynamic value) {
+      if (value == null) return null;
+      if (value is DateTime) return value;
+      if (value is String) {
+        try {
+          return DateTime.parse(value);
+        } catch (e) {
+          return null;
+        }
+      }
+      return null;
+    }
+
     return UserModel(
       id: json['id'] as String,
       schoolId: json['school_id'] as String?,
-      role: json['role'] as String,
-      fullName: json['full_name'] as String,
-      email: json['email'] as String,
+      role: (json['role'] as String?) ?? 'student',
+      fullName: (json['full_name'] as String?) ?? json['email'] as String? ?? 'Utilisateur',
+      email: (json['email'] as String?) ?? '',
       phone: json['phone'] as String?,
       photoUrl: json['photo_url'] as String?,
       studentCode: json['student_code'] as String?,
-      dateOfBirth: json['date_of_birth'] != null 
-          ? DateTime.parse(json['date_of_birth'] as String)
-          : null,
+      dateOfBirth: parseDate(json['date_of_birth']),
       address: json['address'] as String?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: parseDate(json['created_at']) ?? DateTime.now(),
+      updatedAt: parseDate(json['updated_at']) ?? DateTime.now(),
     );
   }
 

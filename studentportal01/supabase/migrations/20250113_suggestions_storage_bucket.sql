@@ -16,6 +16,11 @@ ON CONFLICT (id) DO UPDATE SET
   public = true,
   file_size_limit = 52428800;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Allow authenticated uploads to suggestions" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read access to suggestions" ON storage.objects;
+DROP POLICY IF EXISTS "Allow users to delete own suggestion files" ON storage.objects;
+
 -- RLS Policy: Allow authenticated users to upload files
 CREATE POLICY "Allow authenticated uploads to suggestions"
 ON storage.objects FOR INSERT
@@ -135,6 +140,10 @@ CREATE TABLE IF NOT EXISTS suggestion_attachments (
 -- Enable RLS on suggestion_attachments
 ALTER TABLE suggestion_attachments ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view suggestion attachments" ON suggestion_attachments;
+DROP POLICY IF EXISTS "Students can insert suggestion attachments" ON suggestion_attachments;
+
 -- RLS policies for suggestion_attachments
 CREATE POLICY "Users can view suggestion attachments"
 ON suggestion_attachments FOR SELECT
@@ -172,6 +181,10 @@ CREATE TABLE IF NOT EXISTS suggestion_replies (
 
 -- Enable RLS on suggestion_replies
 ALTER TABLE suggestion_replies ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view suggestion replies" ON suggestion_replies;
+DROP POLICY IF EXISTS "Admins can insert replies" ON suggestion_replies;
 
 -- RLS policies for suggestion_replies
 CREATE POLICY "Users can view suggestion replies"

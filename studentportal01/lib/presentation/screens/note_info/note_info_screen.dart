@@ -509,23 +509,102 @@ class _AnnouncementCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: AppSizes.paddingS),
-              searchQuery.isNotEmpty
-                ? _highlightText(announcement.body, searchQuery, Theme.of(context).textTheme.bodyMedium, maxLines: 3)
-                : Text(
-                    announcement.body,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+              // Body text with small image thumbnail at end
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: searchQuery.isNotEmpty
+                      ? _highlightText(announcement.body, searchQuery, Theme.of(context).textTheme.bodyMedium, maxLines: 3)
+                      : Text(
+                          announcement.body,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                   ),
+                  // Small image thumbnail at end of body
+                  if (announcement.imageAttachments.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () => _showFullImage(context, announcement.imageAttachments.first.fileUrl),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                announcement.imageAttachments.first.fileUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: Colors.grey[200],
+                                      child: Icon(
+                                        Icons.image_outlined,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: Colors.grey[100],
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Show image count badge if multiple
+                              if (announcement.imageAttachments.length > 1)
+                                Positioned(
+                                  bottom: 2,
+                                  right: 2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '+${announcement.imageAttachments.length - 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
               // Type-specific payload fields
               if (announcement.payload != null && announcement.payload!.isNotEmpty) ...[
                 const SizedBox(height: AppSizes.paddingS),
                 _buildPayloadSection(context),
-              ],
-              // Display images inline like Facebook posts
-              if (announcement.imageAttachments.isNotEmpty) ...[
-                const SizedBox(height: AppSizes.paddingM),
-                _buildImageGallery(context, announcement.imageAttachments),
               ],
               // Show file attachments count
               if (announcement.fileAttachments.isNotEmpty) ...[

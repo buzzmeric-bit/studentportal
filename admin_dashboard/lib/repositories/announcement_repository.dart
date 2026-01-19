@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/config/supabase_config.dart';
 import '../models/announcement_model.dart';
@@ -17,42 +18,63 @@ class AnnouncementRepository {
     int limit = 50,
     int offset = 0,
   }) async {
-    // Build query with filters BEFORE ordering
-    var query = _client.from('vw_announcements').select();
+    try {
+      // Build query with filters BEFORE ordering
+      var query = _client.from('vw_announcements').select();
 
-    // Apply filters first
-    if (scopeFilter != null) {
-      query = query.eq('scope', scopeFilter == AnnouncementScope.global ? 'global' : 'class');
+      // Apply filters first
+      if (scopeFilter != null) {
+        query = query.eq('scope', scopeFilter == AnnouncementScope.global ? 'global' : 'class');
+      }
+
+      if (schoolId != null) {
+        query = query.eq('school_id', schoolId);
+      }
+
+      if (classId != null) {
+        query = query.eq('class_id', classId);
+      }
+
+      // Then apply ordering and pagination
+      final response = await query
+          .order('is_pinned', ascending: false)
+          .order('published_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      final announcements = (response as List)
+          .map((json) => Announcement.fromJson(json))
+          .toList();
+
+      // Fetch attachments for each announcement
+      for (var i = 0; i < announcements.length; i++) {
+        final attachments = await fetchAttachments(
+          announcements[i].id,
+          announcements[i].scope == AnnouncementScope.global ? 'global' : 'class',
+        );
+        announcements[i] = announcements[i].copyWith(attachments: attachments);
+      }
+
+      return announcements;
+    } catch (e) {
+      debugPrint('fetchAnnouncements error: $e - falling back to individual tables');
+      // Fallback to individual tables
+      final results = <Announcement>[];
+      
+      if (scopeFilter == null || scopeFilter == AnnouncementScope.global) {
+        final global = await fetchGlobalAnnouncements(schoolId ?? '');
+        results.addAll(global);
+      }
+      
+      if (scopeFilter == null || scopeFilter == AnnouncementScope.classScope) {
+        if (classId != null) {
+          final classAnnouncements = await fetchClassAnnouncements(classId: classId);
+          results.addAll(classAnnouncements);
+        }
+      }
+      
+      results.sort((a, b) => (b.publishedAt ?? b.createdAt).compareTo(a.publishedAt ?? a.createdAt));
+      return results.take(limit).toList();
     }
-
-    if (schoolId != null) {
-      query = query.eq('school_id', schoolId);
-    }
-
-    if (classId != null) {
-      query = query.eq('class_id', classId);
-    }
-
-    // Then apply ordering and pagination
-    final response = await query
-        .order('is_pinned', ascending: false)
-        .order('published_at', ascending: false)
-        .range(offset, offset + limit - 1);
-
-    final announcements = (response as List)
-        .map((json) => Announcement.fromJson(json))
-        .toList();
-
-    // Fetch attachments for each announcement
-    for (var i = 0; i < announcements.length; i++) {
-      final attachments = await fetchAttachments(
-        announcements[i].id,
-        announcements[i].scope == AnnouncementScope.global ? 'global' : 'class',
-      );
-      announcements[i] = announcements[i].copyWith(attachments: attachments);
-    }
-
-    return announcements;
   }
 
   /// Fetch global announcements (Note d'info)

@@ -194,6 +194,7 @@ class AnimatedSearchHeader extends StatelessWidget {
                                 child: TextField(
                                   controller: searchController,
                                   focusNode: searchFocusNode,
+                                  cursorColor: Colors.grey[600],
                                   style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
@@ -206,6 +207,7 @@ class AnimatedSearchHeader extends StatelessWidget {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w400,
                                     ),
+                                    filled: false,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,

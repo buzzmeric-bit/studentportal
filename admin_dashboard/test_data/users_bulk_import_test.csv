@@ -1,0 +1,19 @@
+full_name,email,phone,role,niveau_code,section_code,class,date_of_birth,address
+Ahmed Ben Salah,ahmed.bensalah@pythagore.tn,+216 98 123 456,student,7eme,,Classe 7ème 1,2012-03-15,Tunis Centre
+Fatma Trabelsi,fatma.trabelsi@pythagore.tn,+216 97 234 567,student,7eme,,Classe 7ème 2,2012-05-22,La Marsa
+Mohamed Khelifi,mohamed.khelifi@pythagore.tn,+216 96 345 678,student,8eme,,Classe 8ème 1,2011-08-10,Ariana
+Salma Bouazizi,salma.bouazizi@pythagore.tn,+216 95 456 789,student,8eme,,Classe 8ème 2,2011-11-28,Sousse
+Youssef Hamdi,youssef.hamdi@pythagore.tn,+216 94 567 890,student,9eme,,Classe 9ème 1,2010-01-05,Sfax
+Amira Chaari,amira.chaari@pythagore.tn,+216 93 678 901,student,9eme,,Classe 9ème 2,2010-04-18,Monastir
+Karim Jaziri,karim.jaziri@pythagore.tn,+216 92 789 012,student,1ere_sec,,Classe 1ère S 1,2009-07-25,Bizerte
+Nour Mansouri,nour.mansouri@pythagore.tn,+216 91 890 123,student,1ere_sec,,Classe 1ère S 2,2009-09-30,Gabès
+Rami Sassi,rami.sassi@pythagore.tn,+216 90 901 234,student,2eme_sec,sciences_exp,Classe 2ème Sc.Exp 1,2008-02-12,Nabeul
+Ines Ferchichi,ines.ferchichi@pythagore.tn,+216 99 012 345,student,2eme_sec,lettres,Classe 2ème Lettres 1,2008-06-08,Kairouan
+Bilel Dridi,bilel.dridi@pythagore.tn,+216 98 111 222,student,3eme_sec,sciences_exp,Classe 3ème Sc.Exp 1,2007-10-20,Mahdia
+Sarra Riahi,sarra.riahi@pythagore.tn,+216 97 222 333,student,3eme_sec,maths,Classe 3ème Maths 1,2007-12-03,Tozeur
+Haythem Oueslati,haythem.oueslati@pythagore.tn,+216 96 333 444,student,bac,sciences_exp,Classe Bac Sc.Exp 1,2006-03-27,Gafsa
+Meryem Lahmar,meryem.lahmar@pythagore.tn,+216 95 444 555,student,bac,maths,Classe Bac Maths 1,2006-08-14,Médenine
+Aymen Guesmi,aymen.guesmi@pythagore.tn,+216 94 222 888,student,bac,sciences_info,Classe Bac Info 1,2006-05-20,Tunis
+Rania Belkhodja,rania.belkhodja@pythagore.tn,+216 93 333 999,student,2eme_sec,economie,Classe 2ème Éco 1,2008-09-15,Ariana
+Omar Baccouche,omar.baccouche@pythagore.tn,+216 94 555 666,teacher,,,,,Tunis
+Hana Belhadj,hana.belhadj@pythagore.tn,+216 93 666 777,admin,,,,,La Marsa

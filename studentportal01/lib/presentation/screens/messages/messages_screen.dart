@@ -434,23 +434,102 @@ class _MessageCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: AppSizes.paddingS),
-              Text(
-                message.body,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+              // Body content with small image thumbnail at end
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      message.body,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                  ),
+                  // Small image thumbnail at end of body
+                  if (message.imageAttachments.isNotEmpty) ...[
+                    const SizedBox(width: 10),
+                    GestureDetector(
+                      onTap: () => _showFullImage(context, message.imageAttachments.first.fileUrl),
+                      child: Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                message.imageAttachments.first.fileUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      color: Colors.grey[200],
+                                      child: Icon(
+                                        Icons.image_outlined,
+                                        size: 18,
+                                        color: Colors.grey[400],
+                                      ),
+                                    ),
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: Colors.grey[100],
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              // Show image count badge if multiple
+                              if (message.imageAttachments.length > 1)
+                                Positioned(
+                                  bottom: 2,
+                                  right: 2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      '+${message.imageAttachments.length - 1}',
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               // Type-specific payload fields
               if (message.payload != null && message.payload!.isNotEmpty) ...[
                 const SizedBox(height: AppSizes.paddingS),
                 _buildPayloadSection(context),
-              ],
-              // Display images inline like Facebook posts
-              if (message.imageAttachments.isNotEmpty) ...[
-                const SizedBox(height: AppSizes.paddingM),
-                _buildImageGallery(context, message.imageAttachments),
               ],
               // Show file attachments count
               if (message.fileAttachments.isNotEmpty) ...[
@@ -468,127 +547,6 @@ class _MessageCard extends StatelessWidget {
               ],
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  /// Build Facebook-style image gallery for attachments
-  Widget _buildImageGallery(BuildContext context, List<AnnouncementAttachment> images) {
-    if (images.isEmpty) return const SizedBox.shrink();
-    
-    if (images.length == 1) {
-      return GestureDetector(
-        onTap: () => _showFullImage(context, images[0].fileUrl),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppSizes.radiusM),
-          child: Image.network(
-            images[0].fileUrl,
-            fit: BoxFit.cover,
-            width: double.infinity,
-            height: 200,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                height: 200,
-                color: Colors.grey[200],
-                child: Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) => Container(
-              height: 200,
-              color: Colors.grey[200],
-              child: const Center(child: Icon(Icons.broken_image, size: 48, color: Colors.grey)),
-            ),
-          ),
-        ),
-      );
-    }
-    
-    // Multiple images - grid layout like Facebook
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppSizes.radiusM),
-      child: SizedBox(
-        height: 200,
-        child: Row(
-          children: [
-            // First image (larger)
-            Expanded(
-              flex: 2,
-              child: GestureDetector(
-                onTap: () => _showImageGalleryViewer(context, images, 0),
-                child: Image.network(
-                  images[0].fileUrl,
-                  fit: BoxFit.cover,
-                  height: 200,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.grey[200],
-                    child: const Center(child: Icon(Icons.broken_image)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 2),
-            // Second column with remaining images
-            Expanded(
-              child: Column(
-                children: [
-                  if (images.length > 1)
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _showImageGalleryViewer(context, images, 1),
-                        child: Image.network(
-                          images[1].fileUrl,
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: Colors.grey[200],
-                            child: const Center(child: Icon(Icons.broken_image)),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (images.length > 2) ...[
-                    const SizedBox(height: 2),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => _showImageGalleryViewer(context, images, 2),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            Image.network(
-                              images[2].fileUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(
-                                color: Colors.grey[200],
-                                child: const Center(child: Icon(Icons.broken_image)),
-                              ),
-                            ),
-                            if (images.length > 3)
-                              Container(
-                                color: Colors.black45,
-                                child: Center(
-                                  child: Text(
-                                    '+${images.length - 3}',
-                                    style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );
